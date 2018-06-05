@@ -29,3 +29,9 @@ libdbus_cpp = shared_library('dbus-c++-1',
     c_args : ['-Wno-unused-parameter'],
     install : true,
 )
+
+foreach comp : ['ecore', 'glib']
+    if conf.get('ENABLE_' + comp.to_upper()) == 1
+        subdir('integration/' + comp)
+    endif
+endforeach

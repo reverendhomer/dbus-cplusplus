@@ -42,6 +42,11 @@ if enable_doxygen_docs == 'yes'
     conf.set('DBUS_DOXYGEN_DOCS_ENABLED', 1)
 endif
 
+conf.set('HAVE_CONFIG_H', 1)
+config_h = configure_file(
+    output: 'config.h',
+    configuration: conf)
+
 subdir('src')
 subdir('tools')
 #subdir('data')
