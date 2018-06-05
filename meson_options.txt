@@ -1,5 +1,11 @@
-option('enable-ecore', type: 'boolean', value: 'true', description: 'enable ecore integration')
-option('enable-glib', type: 'boolean', value: 'true', description: 'enable glib integration')
-option('enable-doxygen-docs', type: 'boolean', value: 'false', description: 'build DOXYGEN documentation (requires Doxygen)')
-option('enable-tests', type: 'boolean', value: 'true': description: 'build tests')
-option('enable-examples', type: 'boolean', value: 'true', description: 'build examples')
+option('enable-ecore', type : 'boolean', value : 'true',
+       description : 'enable ecore integration')
+option('enable-glib', type : 'boolean', value : 'true',
+       description : 'enable glib integration')
+option('enable-doxygen-docs', type: 'combo', choices : ['auto', 'yes', 'no'],
+       value : 'no',
+       description : 'build DOXYGEN documentation (requires Doxygen)')
+option('enable-tests', type : 'boolean',
+       value : 'true', description : 'build tests')
+option('enable-examples', type : 'boolean', value : 'true',
+       description : 'build examples')
