@@ -30,8 +30,20 @@ libdbus_cpp = shared_library('dbus-c++-1',
     install : true,
 )
 
-foreach comp : ['ecore', 'glib']
-    if conf.get('ENABLE_' + comp.to_upper()) == 1
-        subdir('integration/' + comp)
-    endif
-endforeach
+libdbus_cpp_ecore = shared_library('libdbus-c++-ecore-1',
+    'integration/ecore/ecore-integration.cpp',
+    include_directories : include_directories('../include'),
+    link_with : libdbus_cpp,
+    dependencies : [dbus, ecore],
+    install : true,
+    c_args : ['-Wno-unused-parameter']
+)
+
+libdbus_cpp_glib = shared_library('libdbus-c++-glib-1',
+    'integration/glib/glib-integration.cpp',
+    link_with: libdbus_cpp,
+    include_directories: include_directories('../include'),
+    dependencies: [dbus, glib],
+    install: true,
+    c_args : ['-Wno-unused-parameters']
+)
