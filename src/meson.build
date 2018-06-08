@@ -22,16 +22,19 @@ lib_sources = files('''
     types.cpp
 '''.split())
 
+lib_version = '0.0.0'
 libdbus_cpp = shared_library('dbus-c++-1',
     lib_sources,
+    version: lib_version,
     include_directories : include_directories('../include'),
     dependencies : [dbus, pthread],
     c_args : ['-Wno-unused-parameter'],
     install : true,
 )
 
-libdbus_cpp_ecore = shared_library('libdbus-c++-ecore-1',
+libdbus_cpp_ecore = shared_library('dbus-c++-ecore-1',
     'integration/ecore/ecore-integration.cpp',
+    version: lib_version,
     include_directories : include_directories('../include'),
     link_with : libdbus_cpp,
     dependencies : [dbus, ecore],
@@ -39,8 +42,9 @@ libdbus_cpp_ecore = shared_library('libdbus-c++-ecore-1',
     c_args : ['-Wno-unused-parameter']
 )
 
-libdbus_cpp_glib = shared_library('libdbus-c++-glib-1',
+libdbus_cpp_glib = shared_library('dbus-c++-glib-1',
     'integration/glib/glib-integration.cpp',
+    version: lib_version,
     link_with: libdbus_cpp,
     include_directories: include_directories('../include'),
     dependencies: [dbus, glib],
