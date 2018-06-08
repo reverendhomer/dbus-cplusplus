@@ -21,3 +21,4 @@ m4/
 missing
 src/Makefile.in
 tools/Makefile.in
+build
