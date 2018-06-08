@@ -9,3 +9,4 @@ option('enable-tests', type : 'boolean',
        value : 'true', description : 'build tests')
 option('enable-examples', type : 'boolean', value : 'true',
        description : 'build examples')
+option('docdir', type : 'string', description : 'documentation directory')

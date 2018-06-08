@@ -78,3 +78,29 @@ status = [
 ]
 
 message('\n'.join(status))
+
+pkg = import('pkgconfig')
+foreach tuple : [[libdbus_cpp,       'dbus-c++',       ''],
+                 [libdbus_cpp_ecore, 'dbus-c++-ecore', ' (Ecore Mainloop)'],
+                 [libdbus_cpp_glib,  'dbus-c++-glib',  ' (Glib Mainloop)']]
+    pkg.generate(
+        libraries: tuple[0],
+        subdirs: ['dbus-c++-1'],
+        version: meson.project_version(),
+        name: 'lib' + tuple[1],
+        filebase: tuple[1] + '-1',
+        description: 'Native C++ bindings for D-Bus' + tuple[2])
+endforeach
+
+docdir = get_option('docdir')
+if docdir == ''
+    docdir = join_paths(get_option('datadir'), 'doc/dbus-c++')
+endif
+
+install_data(
+    'AUTHORS',
+    'COPYING',
+    'NEWS',
+    'README',
+    install_dir : docdir
+)
