@@ -1,9 +1,9 @@
 #ifndef __DEMO_DBUS_BROWSER_H
 #define __DEMO_DBUS_BROWSER_H
 
+#include <gtkmm.h>
 #include <dbus-c++/dbus.h>
 #include <dbus-c++/glib-integration.h>
-#include <gtkmm.h>
 
 #include "dbus-glue.h"
 
