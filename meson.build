@@ -47,6 +47,7 @@ config_h = configure_file(
     output: 'config.h',
     configuration: conf)
 
+subdir('include')
 subdir('src')
 subdir('tools')
 #subdir('data')
