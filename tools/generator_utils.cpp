@@ -38,7 +38,7 @@ void underscorize(string &str)
 {
   for (unsigned int i = 0; i < str.length(); ++i)
   {
-    if (!isalpha(str[i]) && !isdigit(str[i])) str[i] = '_';
+    if (!isalnum(str[i])) str[i] = '_';
   }
 }
 
@@ -98,8 +98,7 @@ static void _parse_signature(const string &signature, string &type, unsigned int
       case '{':
       {
         type += "std::map< ";
-        ++i;
-        _parse_signature(signature, type, i);
+        _parse_signature(signature, type, ++i);
         type += " >";
 
         break;
@@ -107,8 +106,7 @@ static void _parse_signature(const string &signature, string &type, unsigned int
       case '(':
       {
         type += "std::vector< ::DBus::Struct< ";
-        ++i;
-        _parse_signature(signature, type, i);
+        _parse_signature(signature, type, ++i);
         type += " > >";
 
         break;
@@ -117,7 +115,6 @@ static void _parse_signature(const string &signature, string &type, unsigned int
       {
         type += "std::vector< ";
         _parse_signature(signature, type, i, true);
-
         type += " >";
 
         break;
@@ -128,11 +125,9 @@ static void _parse_signature(const string &signature, string &type, unsigned int
     case '(':
     {
       type += "::DBus::Struct< ";
-      ++i;
-
-      _parse_signature(signature, type, i);
-
+      _parse_signature(signature, type, ++i);
       type += " >";
+
       break;
     }
     case ')':
