@@ -44,7 +44,7 @@ void niam(int sig)
 }
 
 int main(int argc, char **argv)
-{
+try {
   signal(SIGTERM, niam);
   signal(SIGINT, niam);
   signal(SIGALRM, niam);
@@ -76,4 +76,7 @@ int main(int argc, char **argv)
   }
 
   return 0;
+} catch (const DBus::Error& err) {
+  std::cerr << err.what() << std::endl;
+  return 1;
 }
