@@ -7,7 +7,10 @@ dbus_browser_glue = custom_target('examples.glib.glue',
     depends: xml2cpp
 )
 dbus_browser = executable('dbus-browser',
-    ['dbus-browser.cpp', 'dbus-browser.h', 'xml.cpp', dbus_browser_glue],
+    ['dbus-browser.cpp',
+     'dbus-browser.h',
+     '../../tools/xml.cpp',
+     dbus_browser_glue],
     link_with: [libdbus_cpp, libdbus_cpp_glib],
     include_directories: include_directories('../../include', '../../tools'),
     dependencies: [gtkmm, expat],
