@@ -88,8 +88,6 @@ void handler3(const void *data, void *buffer, unsigned int nbyte)
 
 int main()
 {
-  size_t i;
-
   signal(SIGTERM, niam);
   signal(SIGINT, niam);
 
@@ -110,19 +108,15 @@ int main()
   thread_pipe_list[0] = dispatcher.add_pipe(handler1, NULL);
   thread_pipe_list[1] = dispatcher.add_pipe(handler2, NULL);
   thread_pipe_list[2] = dispatcher.add_pipe(handler3, NULL);
-  for (i = 0; i < THREADS; ++i)
-  {
+  for (size_t i = 0; i < THREADS; ++i)
     pthread_create(threads + i, NULL, greeter_thread, (void *) i);
-  }
 
   dispatcher.enter();
 
   cout << "terminating" << endl;
 
-  for (i = 0; i < THREADS; ++i)
-  {
+  for (size_t i = 0; i < THREADS; ++i)
     pthread_join(threads[i], NULL);
-  }
 
   dispatcher.del_pipe(thread_pipe_list[0]);
   dispatcher.del_pipe(thread_pipe_list[1]);

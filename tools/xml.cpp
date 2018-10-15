@@ -105,10 +105,7 @@ Nodes Node::operator[](const std::string &key)
 
 std::string Node::get(const std::string &attribute)
 {
-  if (_attrs.find(attribute) != _attrs.end())
-    return _attrs[attribute];
-  else
-    return "";
+  return _attrs.find(attribute) != _attrs.end() ? _attrs[attribute] : "";
 }
 
 void Node::set(const std::string &attribute, std::string value)
@@ -135,32 +132,22 @@ void Node::_raw_xml(std::string &xml, int &depth) const
   xml.append("<" + name);
 
   for (Attributes::const_iterator i = _attrs.begin(); i != _attrs.end(); ++i)
-  {
     xml.append(" " + i->first + "=\"" + i->second + "\"");
-  }
 
   if (cdata.length() == 0 && children.size() == 0)
-  {
     xml.append("/>\n");
-  }
-  else
-  {
+  else {
     xml.append(">");
 
     if (cdata.length())
-    {
       xml.append(cdata);
-    }
 
-    if (children.size())
-    {
+    if (children.size()) {
       xml.append("\n");
       depth++;
 
       for (Children::const_iterator i = children.begin(); i != children.end(); ++i)
-      {
         i->_raw_xml(xml, depth);
-      }
 
       depth--;
       xml.append(depth * 2, ' ');
@@ -225,8 +212,7 @@ void Document::from_xml(const std::string &xml)
 
   XML_Status status = XML_Parse(parser, xml.c_str(), xml.length(), true);
 
-  if (status == XML_STATUS_ERROR)
-  {
+  if (status == XML_STATUS_ERROR) {
     const char *error = XML_ErrorString(XML_GetErrorCode(parser));
     int line = XML_GetCurrentLineNumber(parser);
     int column = XML_GetCurrentColumnNumber(parser);
@@ -234,11 +220,8 @@ void Document::from_xml(const std::string &xml)
     XML_ParserFree(parser);
 
     throw Error(error, line, column);
-  }
-  else
-  {
+  } else
     XML_ParserFree(parser);
-  }
 }
 
 std::string Document::to_xml() const
@@ -263,17 +246,12 @@ void Document::Expat::start_element_handler(void *data, const XML_Char *name, co
   //debug_log("xml:%d -> %s", doc->_depth, name);
 
   if (!doc->root)
-  {
     doc->root = new Node(name, atts);
-  }
-  else
-  {
+  else {
     Node::Children *cld = &(doc->root->children);
 
     for (int i = 1; i < doc->_depth; ++i)
-    {
       cld = &(cld->back().children);
-    }
     cld->push_back(Node(name, atts));
 
     //std::cerr << doc->to_xml() << std::endl;
@@ -288,13 +266,10 @@ void Document::Expat::character_data_handler(void *data, const XML_Char *chars, 
   Node *nod = doc->root;
 
   for (int i = 1; i < doc->_depth; ++i)
-  {
     nod = &(nod->children.back());
-  }
-  int x, y;
 
-  x = 0;
-  y = len - 1;
+  int x = 0;
+  int y = len - 1;
 
   while (isspace(chars[y]) && y > 0) --y;
   while (isspace(chars[x]) && x < y) ++x;

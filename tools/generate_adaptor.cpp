@@ -74,8 +74,7 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
 
     // these interface names are skipped.
     if (ifacename == "org.freedesktop.DBus.Introspectable"
-        || ifacename == "org.freedesktop.DBus.Properties")
-    {
+        || ifacename == "org.freedesktop.DBus.Properties") {
       cerr << "skipping interface " << ifacename << endl;
       continue;
     }
@@ -85,8 +84,7 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
     unsigned int nspaces = 0;
 
     // prints all the namespaces defined with <interface name="X.Y.Z">
-    while (ss.str().find('.', ss.tellg()) != string::npos)
-    {
+    while (ss.str().find('.', ss.tellg()) != string::npos) {
       getline(ss, nspace, '.');
 
       body << "namespace " << nspace << " {" << endl;
@@ -163,14 +161,10 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
 
         body << tab << tab << tab << "{ ";
 
-        if (arg.get("name").length())
-        {
+        if (!arg.get("name").empty())
           body << "\"" << arg.get("name") << "\", ";
-        }
         else
-        {
           body << "0, ";
-        }
         body << "\"" << arg.get("type") << "\", "
              << (arg.get("direction") == "in" ? "true" : "false")
              << " }," << endl;
@@ -279,28 +273,19 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
       string arg_object;
 
       if (!annotations_object.empty())
-      {
         arg_object = annotations_object.front()->get("value");
-      }
 
       body << tab << "virtual ";
 
       // return type is 'void' if none or multible return values
       if (args_out.size() == 0 || args_out.size() > 1)
-      {
         body << "void ";
-      }
-      else if (args_out.size() == 1)
-      {
+      else if (args_out.size() == 1) {
         // generate basic or object return type
-        if (arg_object.length())
-        {
+        if (!arg_object.empty())
           body << arg_object << " ";
-        }
         else
-        {
           body << signature_to_type(args_out.front()->get("type")) << " ";
-        }
       }
 
       // generate the method name
@@ -317,34 +302,28 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
         string arg_object;
 
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
 
         // generate basic signature only if no object name available...
         if (!arg_object.length())
-        {
           body << "const " << signature_to_type(arg.get("type")) << "& ";
-        }
         // ...or generate object style if available
-        else
-        {
+        else {
           body << "const " << arg_object << "& ";
 
           // store a object name to later generate header includes
           include_vector.push_back(arg_object);
         }
 
-        if (arg_name.length())
+        if (!arg_name.empty())
           body << arg_name;
 
-        if ((i + 1 != args_in.size() || args_out.size() > 1))
+        if (i + 1 != args_in.size() || args_out.size() > 1)
           body << ", ";
       }
 
       // generate the method 'out' variables if multibe 'out' values exist
-      if (args_out.size() > 1)
-      {
+      if (args_out.size() > 1) {
         unsigned int i = 0;
         for (Xml::Nodes::iterator ao = args_out.begin(); ao != args_out.end(); ++ao, ++i)
         {
@@ -355,18 +334,13 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
           string arg_object;
 
           if (!annotations_object.empty())
-          {
             arg_object = annotations_object.front()->get("value");
-          }
 
           // generate basic signature only if no object name available...
           if (!arg_object.length())
-          {
             body << signature_to_type(arg.get("type")) << "& ";
-          }
           // ...or generate object style if available
-          else
-          {
+          else {
             body << arg_object << "& ";
 
             // store a object name to later generate header includes
@@ -407,18 +381,13 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
         string arg_object;
 
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
 
         // generate basic signature only if no object name available...
-        if (!arg_object.length())
-        {
+        if (arg_object.empty())
           body << "const " << signature_to_type(arg.get("type")) << "& arg" << i + 1;
-        }
         // ...or generate object style if available
-        else
-        {
+        else {
           body << "const " << arg_object << "& arg" << i + 1;
 
           // store a object name to later generate header includes
@@ -434,8 +403,7 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
            << tab << tab << "::DBus::SignalMessage sig(\"" << signal.get("name") << "\");" << endl;
 
       // generate the signal body
-      if (!args.empty())
-      {
+      if (!args.empty()) {
         body << tab << tab << "::DBus::MessageIter wi = sig.writer();" << endl;
 
         unsigned int i = 0;
@@ -447,21 +415,15 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
           string arg_object;
 
           if (!annotations_object.empty())
-          {
             arg_object = annotations_object.front()->get("value");
-          }
 
-          if (arg_object.length())
-          {
+          if (arg_object.length()) {
             body << tab << tab << signature_to_type(arg.get("type")) << " _arg" << i + 1 << ";" << endl;
             body << tab << tab << "_arg" << i + 1 << " << " << "arg" << i + 1 << ";" << endl;
 
             body << tab << tab << "wi << _arg" << i + 1 << ";" << endl;
-          }
-          else
-          {
+          } else
             body << tab << tab << "wi << arg" << i + 1 << ";" << endl;
-          }
         }
       }
 
@@ -486,8 +448,7 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
 
       body << tab << "::DBus::Message " << stub_name(method.get("name")) << "(const ::DBus::CallMessage &call)" << endl
            << tab << "{" << endl;
-      if(!args_in.empty())
-      {
+      if(!args_in.empty()) {
          body << tab << tab << "::DBus::MessageIter ri = call.reader();" << endl;
          body << endl;
       }
@@ -498,7 +459,7 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
       {
         Xml::Node &arg = **ai;
 
-        body << tab << tab << signature_to_type(arg.get("type")) << " argin" << i << ";" << " ";
+        body << tab << tab << signature_to_type(arg.get("type")) << " argin" << i << "; ";
         body << "ri >> argin" << i << ";" << endl;
       }
 
@@ -512,20 +473,16 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
         string arg_object;
 
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
 
-        if (arg_object.length())
-        {
-          body << tab << tab << arg_object << " _argin" << i << ";";
-          body << " " << "_argin" << i << " << " << "argin" << i << ";" << endl;
+        if (!arg_object.empty()) {
+          body << tab << tab << arg_object << " _argin" << i << ';';
+          body << ' ' << "_argin" << i << " << " << "argin" << i << ';' << endl;
         }
       }
 
       // generate 'out' variables
-      if (!args_out.empty())
-      {
+      if (!args_out.empty()) {
         unsigned int i = 1;
         for (Xml::Nodes::iterator ao = args_out.begin(); ao != args_out.end(); ++ao, ++i)
         {
@@ -534,19 +491,14 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
           body << tab << tab << signature_to_type(arg.get("type")) << " argout" << i;
 
           if (args_out.size() == 1) // a single 'out' parameter will be assigned
-          {
             body << " = ";
-          }
           else // multible 'out' parameters will be handled as parameters below
-          {
-            body << ";" << endl;
-          }
+            body << ';' << endl;
         }
       }
 
       // generate 'out' object variables
-      if (!args_out.empty())
-      {
+      if (!args_out.empty()) {
         unsigned int i = 1;
         for (Xml::Nodes::iterator ao = args_out.begin(); ao != args_out.end(); ++ao, ++i)
         {
@@ -556,15 +508,11 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
           string arg_object;
 
           if (!annotations_object.empty())
-          {
             arg_object = annotations_object.front()->get("value");
-          }
 
           // generate object types
-          if (arg_object.length())
-          {
+          if (!arg_object.empty())
             body << tab << tab << arg_object << " _argout" << i << ";" << endl;
-          }
         }
       }
 
@@ -578,16 +526,12 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
         string arg_object;
 
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
       }
 
       // do correct indent
       if (args_out.size() != 1)
-      {
         body << tab << tab;
-      }
 
       body << method.get("name") << "(";
 
@@ -601,20 +545,11 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
         string arg_object;
 
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
 
-        if (arg_object.length())
-        {
-          body << "_argin" << i + 1;
-        }
-        else
-        {
-          body << "argin" << i + 1;
-        }
+        body << (!arg_object.empty() ? "_argin" : "argin") << i + 1;
 
-        if ((i + 1 != args_in.size() || args_out.size() > 1))
+        if (i + 1 != args_in.size() || args_out.size() > 1)
           body << ", ";
       }
 
@@ -629,18 +564,9 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
           string arg_object;
 
           if (!annotations_object.empty())
-          {
             arg_object = annotations_object.front()->get("value");
-          }
 
-          if (arg_object.length())
-          {
-            body << "_argout" << i + 1;
-          }
-          else
-          {
-            body << "argout" << i + 1;
-          }
+          body << (!arg_object.empty() ? "_argout" : "argout") << i + 1;
 
           if (i + 1 != args_out.size())
             body << ", ";
@@ -665,20 +591,14 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
           string arg_object;
 
           if (!annotations_object.empty())
-          {
             arg_object = annotations_object.front()->get("value");
-          }
 
-          if (arg_object.length())
-          {
-            body << tab << tab << "argout" << i + 1 << " << " << "_argout" << i + 1 << ";" << endl;
-          }
+          if (!arg_object.empty())
+            body << tab << tab << "argout" << i + 1 << " << _argout" << i + 1 << ";" << endl;
         }
 
         for (unsigned int i = 0; i < args_out.size(); ++i)
-        {
           body << tab << tab << "wi << argout" << i + 1 << ";" << endl;
-        }
       }
 
       body << tab << tab << "return reply;" << endl;
@@ -690,9 +610,7 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
          << endl;
 
     for (unsigned int i = 0; i < nspaces; ++i)
-    {
       body << "} ";
-    }
     body << endl;
   }
 
@@ -704,16 +622,11 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
   for (vector<string>::const_iterator vec_it = include_vector.begin();
        vec_it != vec_end_it;
        ++vec_it)
-  {
-    const string &include = *vec_it;
-
-    head << "#include " << "\"" << include << ".h" << "\"" << endl;
-  }
+    head << "#include \"" << *vec_it << ".h\"" << endl;
   head << endl;
 
   ofstream file(filename);
-  if (file.bad())
-  {
+  if (file.bad()) {
     cerr << "unable to write file " << filename << endl;
     exit(-1);
   }

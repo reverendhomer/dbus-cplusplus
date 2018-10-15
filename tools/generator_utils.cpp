@@ -37,15 +37,13 @@ const char *dbus_includes = "\n#include <dbus-c++/dbus.h>\n#include <cassert>\n"
 void underscorize(string &str)
 {
   for (unsigned int i = 0; i < str.length(); ++i)
-  {
-    if (!isalnum(str[i])) str[i] = '_';
-  }
+    if (!isalnum(str[i]))
+      str[i] = '_';
 }
 
 string stub_name(string name)
 {
   underscorize(name);
-
   return "_" + name + "_stub";
 }
 
@@ -55,8 +53,7 @@ const char *atomic_type_to_string(char t)
   {
     char type;
     const char *name;
-  } atos[] =
-  {
+  } atos[] = {
     { 'y', "uint8_t" },
     { 'b', "bool" },
     { 'n', "int16_t" },
@@ -73,11 +70,9 @@ const char *atomic_type_to_string(char t)
     { '\0', "" }
   };
   int i;
-
   for (i = 0; atos[i].type; ++i)
-  {
-    if (atos[i].type == t) break;
-  }
+    if (atos[i].type == t)
+      break;
   return atos[i].name;
 }
 
@@ -92,49 +87,33 @@ static void _parse_signature(const string &signature, string &type, unsigned int
     switch (signature[i])
     {
     case 'a':
-    {
       switch (signature[++i])
       {
       case '{':
-      {
         type += "std::map< ";
         _parse_signature(signature, type, ++i);
         type += " >";
-
         break;
-      }
       case '(':
-      {
         type += "std::vector< ::DBus::Struct< ";
         _parse_signature(signature, type, ++i);
         type += " > >";
-
         break;
-      }
       default:
-      {
         type += "std::vector< ";
         _parse_signature(signature, type, i, true);
         type += " >";
-
         break;
       }
-      }
       break;
-    }
     case '(':
-    {
       type += "::DBus::Struct< ";
       _parse_signature(signature, type, ++i);
       type += " >";
-
       break;
-    }
     case ')':
     case '}':
-    {
       return;
-    }
     default:
     {
       const char *atom = atomic_type_to_string(signature[i]);
@@ -152,10 +131,10 @@ static void _parse_signature(const string &signature, string &type, unsigned int
     if (only_once)
       return;
 
-    if (i + 1 < signature.length() && signature[i + 1] != ')' && signature[i + 1] != '}')
-    {
+    if (i + 1 < signature.length()
+        && signature[i + 1] != ')'
+        && signature[i + 1] != '}')
       type += ", ";
-    }
   }
 }
 

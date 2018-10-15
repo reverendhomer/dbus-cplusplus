@@ -64,64 +64,54 @@ void usage(const char *argv0)
 int main(int argc, char **argv)
 {
   if (argc < 2)
-  {
     usage(argv[0]);
-  }
 
-  bool proxy_mode, adaptor_mode;
-  char *proxy, *adaptor;
+  bool proxy_mode = false;
+  char *proxy = nullptr;
 
-  proxy_mode = false;
-  proxy = 0;
+  bool adaptor_mode = false;
+  char *adaptor = nullptr;
 
-  adaptor_mode = false;
-  adaptor = 0;
-
-  for (int a = 1; a < argc; ++a)
-  {
-    if (!strncmp(argv[a], "--proxy=", 8))
-    {
+  for (int a = 1; a < argc; ++a) {
+    if (!strncmp(argv[a], "--proxy=", 8)) {
       proxy_mode = true;
       proxy = argv[a] + 8;
     }
-    else if (!strncmp(argv[a], "--adaptor=", 10))
-    {
+    else if (!strncmp(argv[a], "--adaptor=", 10)) {
       adaptor_mode = true;
       adaptor = argv[a] + 10;
     }
   }
 
-  if (!proxy_mode && !adaptor_mode) usage(argv[0]);
+  if (!proxy_mode && !adaptor_mode)
+    usage(argv[0]);
 
   ifstream xmlfile(argv[1]);
 
-  if (xmlfile.bad())
-  {
+  if (xmlfile.bad()) {
     cerr << "unable to open file " << argv[1] << endl;
     return -1;
   }
 
   Xml::Document doc;
 
-  try
-  {
+  try {
     xmlfile >> doc;
     //cout << doc.to_xml();
-  }
-  catch (Xml::Error &e)
-  {
+  } catch (Xml::Error &e) {
     cerr << "error parsing " << argv[1] << ": " << e.what() << endl;
     return -1;
   }
 
-  if (!doc.root)
-  {
+  if (!doc.root) {
     cerr << "empty document" << endl;
     return -1;
   }
 
-  if (proxy_mode)   generate_proxy(doc, proxy);
-  if (adaptor_mode) generate_adaptor(doc, adaptor);
+  if (proxy_mode)
+    generate_proxy(doc, proxy);
+  if (adaptor_mode)
+    generate_adaptor(doc, adaptor);
 
   return 0;
 }
