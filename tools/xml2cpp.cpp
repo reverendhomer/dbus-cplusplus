@@ -40,7 +40,8 @@ using namespace DBus;
 
 void usage(const char *argv0)
 {
-  cerr << endl << "Usage: " << argv0 << " <xmlfile> [ --proxy=<outfile.h> ] [ --adaptor=<outfile.h> ]"
+  cerr << endl << "Usage: " << argv0
+       << " <xmlfile> [ --proxy=<outfile.h> ] [ --adaptor=<outfile.h> ]"
        << endl << endl;
   exit(-1);
 }
