@@ -4,7 +4,7 @@ generator_glue = custom_target('test.generator.glue',
              'dbuscxx_test_generator-client-glue.h'],
     command: [xml2cpp, '@INPUT@', '--adaptor=@OUTPUT0@', '--proxy=@OUTPUT1@'],
     install: false,
-    build_always: true,
+    build_always_stale: true,
     depends: xml2cpp
 )
 generator_server = executable('dbuscxx_test_generator_server',

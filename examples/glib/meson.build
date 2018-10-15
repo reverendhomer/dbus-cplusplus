@@ -3,7 +3,7 @@ dbus_browser_glue = custom_target('examples.glib.glue',
     output: 'dbus-glue.h',
     command: [xml2cpp, '@INPUT@', '--proxy=@OUTPUT@'],
     install: false,
-    build_always: true,
+    build_always_stale: true,
     depends: xml2cpp
 )
 dbus_browser = executable('dbus-browser',

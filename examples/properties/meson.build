@@ -3,7 +3,7 @@ propsgs_glue = custom_target('examples.properties.glue',
     output: ['propsgs-glue-adaptor.h', 'propsgs-glue-proxy.h'],
     command: [xml2cpp, '@INPUT@', '--adaptor=@OUTPUT0@', '--proxy=@OUTPUT1@'],
     install: false,
-    build_always: true,
+    build_always_stale: true,
     depends: xml2cpp
 )
 propsgs_server = executable('propsgs-server',

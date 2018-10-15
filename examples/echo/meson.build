@@ -3,7 +3,7 @@ echo_glue = custom_target('examples.echo.glue',
     output: ['echo-server-glue.h', 'echo-client-glue.h'],
     command: [xml2cpp, '@INPUT@', '--adaptor=@OUTPUT0@', '--proxy=@OUTPUT1@'],
     install: false,
-    build_always: true,
+    build_always_stale: true,
     depends: xml2cpp
 )
 echo_server = executable('echo-server',
