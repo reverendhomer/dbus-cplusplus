@@ -118,14 +118,11 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
          << tab << "/* properties exported by this interface */\n";
 
     // this loop generates all properties
-    for (Xml::Nodes::iterator pi = properties.begin();
-         pi != properties.end(); ++pi)
-    {
-      Xml::Node &property = **pi;
-      string prop_name = property.get("name");
-      string property_access = property.get("access");
-      if (property_access == "read" || property_access == "readwrite")
-      {
+    for (const auto& pi : iface["property"]) {
+      auto& property = *pi;
+      auto prop_name = property.get("name");
+      auto property_access = property.get("access");
+      if (property_access == "read" || property_access == "readwrite") {
         body << tab << tab
              << "const "<< signature_to_type(property.get("type"))
              << " " << prop_name << "() {\n"
@@ -152,8 +149,7 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
              << tab << tab << "};\n";
       }
 
-      if (property_access == "write" || property_access == "readwrite")
-      {
+      if (property_access == "write" || property_access == "readwrite") {
         body << tab << tab
              << "void " << prop_name << "( const "
              << signature_to_type(property.get("type"))
@@ -189,39 +185,27 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
          << tab << " */\n";
 
     // this loop generates all methods
-    for (Xml::Nodes::iterator mi = methods.begin(); mi != methods.end(); ++mi)
-    {
-      Xml::Node &method = **mi;
-      Xml::Nodes args = method["arg"];
-      Xml::Nodes args_in = args.select("direction", "in");
-      Xml::Nodes args_out = args.select("direction", "out");
-      Xml::Nodes annotations = args["annotation"];
-      Xml::Nodes method_annotations = method["annotation"];
-      Xml::Nodes annotations_noreply = method_annotations.select("name", "org.freedesktop.DBus.Method.NoReply");
-      Xml::Nodes annotations_object = annotations.select("name", "org.freedesktop.DBus.Object");
+    for (const auto& mi : methods) {
+      auto& method = *mi;
       string arg_object;
-      bool annotation_noreply_value = false;
 
       // parse method level noreply annotations
-      if (!annotations_noreply.empty())
-      {
-        string annotation_noreply_value_str = annotations_noreply.front()->get("value");
+      auto annotations_noreply = method["annotation"].select(
+          "name", "org.freedesktop.DBus.Method.NoReply");
+      bool annotation_noreply_value = false;
+      if (!annotations_noreply.empty()
+          && annotations_noreply.front()->get("value") == "true")
+        annotation_noreply_value = true;
 
-        if (annotation_noreply_value_str == "true")
-        {
-          annotation_noreply_value = true;
-        }
-      }
-
+      auto args = method["arg"];
+      auto annotations_object = args["annotation"].select(
+          "name", "org.freedesktop.DBus.Object");
       if (!annotations_object.empty())
-      {
         arg_object = annotations_object.front()->get("value");
-      }
 
+      auto args_out = args.select("direction", "out");
       if (args_out.size() == 0 || args_out.size() > 1)
-      {
         body << tab << "void ";
-      }
       else if (args_out.size() == 1)
         body << tab
              << (arg_object.empty()
@@ -232,75 +216,63 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
       body << method.get("name") << "(";
 
       // generate all 'in' arguments for a method signature
+      auto args_in = args.select("direction", "in");
       unsigned int i = 0;
-      for (Xml::Nodes::iterator ai = args_in.begin(); ai != args_in.end(); ++ai, ++i)
-      {
-        Xml::Node &arg = **ai;
-        Xml::Nodes annotations = arg["annotation"];
-        Xml::Nodes annotations_object = annotations.select("name", "org.freedesktop.DBus.Object");
+      for (auto ai = args_in.begin(); ai != args_in.end(); ++ai, ++i) {
+        auto& arg = **ai;
         string arg_object;
 
+        auto annotations_object = arg["annotation"].select(
+            "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
 
         // generate basic signature only if no object name available...
-        if (!arg_object.length())
-        {
+        if (arg_object.empty())
           body << "const " << signature_to_type(arg.get("type")) << "& ";
-        }
         // ...or generate object style if available
-        else
-        {
+        else {
           body << "const " << arg_object << "& ";
 
           // store a object name to later generate header includes
           include_vector.push_back(arg_object);
         }
 
-        string arg_name = arg.get("name");
-        if (arg_name.length())
+        auto arg_name = arg.get("name");
+        if (!arg_name.empty())
           body << arg_name;
         else
           body << "argin" << i;
 
-        if ((i + 1 != args_in.size() || args_out.size() > 1))
+        if (i + 1 != args_in.size() || args_out.size() > 1)
           body << ", ";
       }
 
-      if (args_out.size() > 1)
-      {
+      if (args_out.size() > 1) {
         // generate all 'out' arguments for a method signature
         unsigned int j = 0;
-        for (Xml::Nodes::iterator ao = args_out.begin(); ao != args_out.end(); ++ao, ++j)
-        {
-          Xml::Node &arg = **ao;
-          Xml::Nodes annotations = arg["annotation"];
-          Xml::Nodes annotations_object = annotations.select("name", "org.freedesktop.DBus.Object");
+        for (auto ao = args_out.begin(); ao != args_out.end(); ++ao, ++j) {
+          auto& arg = **ao;
           string arg_object;
 
+          auto annotations_object = arg["annotation"].select(
+              "name", "org.freedesktop.DBus.Object");
           if (!annotations_object.empty())
-          {
             arg_object = annotations_object.front()->get("value");
-          }
 
           // generate basic signature only if no object name available...
-          if (!arg_object.length())
-          {
+          if (arg_object.empty())
             body << signature_to_type(arg.get("type")) << "&";
-          }
           // ...or generate object style if available
-          else
-          {
+          else {
             body << arg_object << "& ";
 
             // store a object name to later generate header includes
             include_vector.push_back(arg_object);
           }
 
-          string arg_name = arg.get("name");
-          if (arg_name.length())
+          auto arg_name = arg.get("name");
+          if (!arg_name.empty())
             body << " " << arg_name;
           else
             body << " argout" << j;
@@ -318,29 +290,21 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
 
       // generate all 'in' arguments for a method body
       i = 0;
-      for (Xml::Nodes::iterator ai = args_in.begin(); ai != args_in.end(); ++ai, ++i)
-      {
-        Xml::Node &arg = **ai;
-        string arg_name = arg.get("name");
-        Xml::Nodes annotations = arg["annotation"];
-        Xml::Nodes annotations_object = annotations.select("name", "org.freedesktop.DBus.Object");
+      for (auto ai = args_in.begin(); ai != args_in.end(); ++ai, ++i) {
+        auto& arg = **ai;
         string arg_object;
 
+        auto annotations_object = arg["annotation"].select(
+            "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
 
-        if (!arg_name.length())
-        {
-          arg_name = "argin";
-          arg_name += toString <unsigned int> (i);
-        }
+        auto arg_name = arg.get("name");
+        if (arg_name.empty())
+          arg_name = "argin" + to_string(i);
 
         // generate extra code to wrap object
-        if (arg_object.length())
-        {
-
+        if (!arg_object.empty()) {
           body << tab << tab
                << signature_to_type(arg.get("type")) << "_" << arg_name << ";\n"
                << tab << tab << "_" << arg_name << " << " << arg_name << ";\n";
@@ -353,10 +317,8 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
       body << tab << tab << "call.member(\"" << method.get("name") << "\");\n";
 
       // generate noreply/reply method calls
-      if (annotation_noreply_value)
-      {
-        if (args_out.size())
-        {
+      if (annotation_noreply_value) {
+        if (!args_out.empty()) {
           cerr << "Function: " << method.get("name") << ":\n"
                << "Option 'org.freedesktop.DBus.Method.NoReply' not allowed"
                << " for methods with 'out' variables!\n"
@@ -375,25 +337,22 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
         body << tab << tab << "::DBus::MessageIter ri = ret.reader();\n\n";
 
       // generate 'out' values as return if only one existing
-      if (args_out.size() == 1)
-      {
-        Xml::Nodes annotations = args_out["annotation"];
-        Xml::Nodes annotations_object = annotations.select("name", "org.freedesktop.DBus.Object");
+      if (args_out.size() == 1) {
         string arg_object;
 
+        auto annotations_object = args_out["annotation"].select(
+            "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
 
-        if (arg_object.length())
+        if (!arg_object.empty())
           body << tab << tab << arg_object << " _argout;\n";
 
         body << tab << tab
              << signature_to_type(args_out.front()->get("type")) << " argout;\n"
              << tab << tab << "ri >> argout;\n";
 
-        if (arg_object.length())
+        if (!arg_object.empty())
           body << tab << tab <<  "_argout << argout;\n"
                << tab << tab << "return _argout;\n";
         else
@@ -402,25 +361,20 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
       } else if (args_out.size() > 1) {
         // generate multible 'out' value
         unsigned int i = 0;
-        for (Xml::Nodes::iterator ao = args_out.begin(); ao != args_out.end(); ++ao, ++i)
-        {
-          Xml::Node &arg = **ao;
-          string arg_name = arg.get("name");
-          Xml::Nodes annotations = arg["annotation"];
-          Xml::Nodes annotations_object = annotations.select("name", "org.freedesktop.DBus.Object");
+        for (auto ao = args_out.begin(); ao != args_out.end(); ++ao, ++i) {
+          auto& arg = **ao;
           string arg_object;
 
+          auto annotations_object = arg["annotation"].select(
+              "name", "org.freedesktop.DBus.Object");
           if (!annotations_object.empty())
-          {
             arg_object = annotations_object.front()->get("value");
-          }
 
-          if (!arg_name.length())
-          {
-            arg_name = "argout" + toString <unsigned int> (i);
-          }
+          auto arg_name = arg.get("name");
+          if (arg_name.empty())
+            arg_name = "argout" + to_string(i);
 
-          if (arg_object.length())
+          if (!arg_object.empty())
             body << tab << tab
                  << signature_to_type(arg.get("type")) << "_" << arg_name << ";\n";
 
@@ -428,7 +382,7 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
                << (arg_object.empty() ? "" : "_")
                << arg_name << ";\n";
 
-          if (arg_object.length())
+          if (!arg_object.empty())
             body << tab << tab
                  << arg_name << " << " << "_" << arg_name << ";\n";
         }
@@ -443,48 +397,41 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
          << tab << " */\n";
 
     // this loop generates all signals
-    for (Xml::Nodes::iterator si = signals.begin(); si != signals.end(); ++si)
-    {
-      Xml::Node &signal = **si;
-      Xml::Nodes args = signal["arg"];
+    for (const auto& si : signals) {
+      auto& signal = *si;
+      auto args = signal["arg"];
 
       body << tab << "virtual void " << signal.get("name") << "(";
 
       // this loop generates all argument for a signal
       unsigned int i = 0;
-      for (Xml::Nodes::iterator ai = args.begin(); ai != args.end(); ++ai, ++i)
-      {
-        Xml::Node &arg = **ai;
-        string arg_name = arg.get("name");
-        Xml::Nodes annotations = arg["annotation"];
-        Xml::Nodes annotations_object = annotations.select("name", "org.freedesktop.DBus.Object");
+      for (auto ai = args.begin(); ai != args.end(); ++ai, ++i) {
+        auto& arg = **ai;
         string arg_object;
 
+        auto annotations_object = arg["annotation"].select(
+            "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
 
         // generate basic signature only if no object name available...
-        if (!arg_object.length())
-        {
+        if (arg_object.empty())
           body << "const " << signature_to_type(arg.get("type")) << "& ";
-        }
         // ...or generate object style if available
-        else
-        {
+        else {
           body << "const " << arg_object << "& ";
 
           // store a object name to later generate header includes
           include_vector.push_back(arg_object);
         }
 
-        if (arg_name.length())
+        auto arg_name = arg.get("name");
+        if (!arg_name.empty())
           body << arg_name;
         else
           body << "argin" << i;
 
-        if ((ai + 1 != args.end()))
+        if (ai + 1 != args.end())
           body << ", ";
       }
       body << ") = 0;\n";
@@ -496,46 +443,39 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
          << tab << " */\n";
 
     // generate all the unmarshalers
-    for (Xml::Nodes::iterator si = signals.begin(); si != signals.end(); ++si)
-    {
-      Xml::Node &signal = **si;
-      Xml::Nodes args = signal["arg"];
+    for (const auto& si : signals) {
+      auto& signal = *si;
 
       body << tab << "void " << stub_name(signal.get("name"))
            << "(const ::DBus::SignalMessage &sig)\n"
            << tab << "{\n";
 
+      auto args = signal["arg"];
       if (!args.empty())
         body << tab << tab << "::DBus::MessageIter ri = sig.reader();\n\n";
 
       unsigned int i = 0;
-      for (Xml::Nodes::iterator ai = args.begin(); ai != args.end(); ++ai, ++i)
-      {
-        Xml::Node &arg = **ai;
-        string arg_name = arg.get("name");
-        Xml::Nodes annotations = arg["annotation"];
-        Xml::Nodes annotations_object = annotations.select("name", "org.freedesktop.DBus.Object");
+      for (auto ai = args.begin(); ai != args.end(); ++ai, ++i) {
+        auto& arg = **ai;
         string arg_object;
 
+        auto annotations_object = arg["annotation"].select(
+            "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
 
         body << tab << tab << signature_to_type(arg.get("type")) << " ";
 
         // use a default if no arg name given
-        if (!arg_name.length())
-        {
-          arg_name = "arg" + toString <unsigned int> (i);
-        }
+        auto arg_name = arg.get("name");
+        if (arg_name.empty())
+          arg_name = "arg" + to_string(i);
 
         body << arg_name << ";\n"
              << tab << tab << "ri >> " << arg_name << ";\n";
 
         // if a object type is used create a local variable and insert values with '<<' operation
-        if (arg_object.length())
-        {
+        if (!arg_object.empty()) {
           body << tab << tab << arg_object << " _" << arg_name << ";\n"
                << tab << tab << "_" << arg_name << " << " << arg_name << ";\n";
 
@@ -548,32 +488,23 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
 
       // generate all arguments for the call to the virtual function
       unsigned int j = 0;
-      for (Xml::Nodes::iterator ai = args.begin(); ai != args.end(); ++ai, ++j)
-      {
-        Xml::Node &arg = **ai;
-        string arg_name = arg.get("name");
-        Xml::Nodes annotations = arg["annotation"];
-        Xml::Nodes annotations_object = annotations.select("name", "org.freedesktop.DBus.Object");
+      for (auto ai = args.begin(); ai != args.end(); ++ai, ++j) {
+        auto& arg = **ai;
         string arg_object;
 
+        auto annotations_object = arg["annotation"].select(
+            "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
-        {
           arg_object = annotations_object.front()->get("value");
-        }
 
-        if (!arg_name.length())
-        {
-          arg_name = "arg" + toString <unsigned int> (j);
-        }
+        auto arg_name = arg.get("name");
+        if (arg_name.empty())
+          arg_name = "arg" + to_string(j);
 
-        if (arg_object.length())
-        {
+        if (!arg_object.empty())
           body << "_" << arg_name;
-        }
         else
-        {
           body << arg_name;
-        }
 
         if (ai + 1 != args.end())
           body << ", ";
@@ -585,30 +516,20 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
     body << "};\n\n";
 
     for (unsigned int i = 0; i < nspaces; ++i)
-    {
       body << "} ";
-    }
     body << '\n';
   }
 
   body << "#endif //" << cond_comp;
 
   // remove all duplicates in the header include vector
-  vector<string>::const_iterator vec_end_it = unique(include_vector.begin(), include_vector.end());
-
-  for (vector<string>::const_iterator vec_it = include_vector.begin();
-       vec_it != vec_end_it;
-       ++vec_it)
-  {
-    const string &include = *vec_it;
-
-    head << "#include " << "\"" << include << ".h" << "\"" << endl;
-  }
-  head << endl;
+  auto vec_end_it = unique(include_vector.begin(), include_vector.end());
+  for (auto inc_it = include_vector.begin(); inc_it != vec_end_it; ++inc_it)
+    head << "#include " << "\"" << *inc_it << ".h" << "\"\n";
+  head << '\n';
 
   ofstream file(filename);
-  if (file.bad())
-  {
+  if (file.bad()) {
     cerr << "unable to write file " << filename << endl;
     exit(-1);
   }
