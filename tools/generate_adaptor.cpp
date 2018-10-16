@@ -120,13 +120,11 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
       body << tab << tab << "bind_property("
            << property.get("name") << ", "
            << "\"" << property.get("type") << "\", "
-           << (property.get("access").find("read") != string::npos
-               ? "true"
-               : "false")
+           << boolalpha
+           << (property.get("access").find("read") != string::npos)
            << ", "
-           << (property.get("access").find("write") != string::npos
-               ? "true"
-               : "false")
+           << boolalpha
+           << (property.get("access").find("write") != string::npos)
            << ");" << endl;
     }
 
@@ -136,14 +134,13 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
       Xml::Node &method = **mi;
 
       body << tab << tab << "register_method("
-           << ifaceclass << ", " << method.get("name") << ", " << stub_name(method.get("name"))
-           << ");" << endl;
+           << ifaceclass << ", " << method.get("name") << ", "
+           << stub_name(method.get("name")) << ");"
+           << endl;
     }
 
-    body << tab << "}" << endl
-         << endl;
-
-    body << tab << "::DBus::IntrospectedInterface *introspect() const " << endl
+    body << tab << "}" << endl << endl
+         << tab << "::DBus::IntrospectedInterface *introspect() const " << endl
          << tab << "{" << endl;
 
     // generate the introspect arguments
@@ -152,7 +149,8 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
       Xml::Node &method = **mi;
       Xml::Nodes args = method["arg"];
 
-      body << tab << tab << "static ::DBus::IntrospectedArgument " << method.get("name") << "_args[] = " << endl
+      body << tab << tab << "static ::DBus::IntrospectedArgument "
+           << method.get("name") << "_args[] = " << endl
            << tab << tab << "{" << endl;
 
       for (Xml::Nodes::iterator ai = args.begin(); ai != args.end(); ++ai)
@@ -166,41 +164,45 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
         else
           body << "0, ";
         body << "\"" << arg.get("type") << "\", "
-             << (arg.get("direction") == "in" ? "true" : "false")
+             << boolalpha << (arg.get("direction") == "in")
              << " }," << endl;
       }
       body << tab << tab << tab << "{ 0, 0, 0 }" << endl
            << tab << tab << "};" << endl;
     }
 
-    body << tab << tab << "static ::DBus::IntrospectedMethod " << ifaceclass << "_methods[] = " << endl
+    body << tab << tab << "static ::DBus::IntrospectedMethod "
+         << ifaceclass << "_methods[] = " << endl
          << tab << tab << "{" << endl;
 
     // generate the introspect methods
     for (Xml::Nodes::iterator mi = methods.begin(); mi != methods.end(); ++mi)
     {
       Xml::Node &method = **mi;
-
-      body << tab << tab << tab << "{ \"" << method.get("name") << "\", " << method.get("name") << "_args }," << endl;
+      body << tab << tab << tab
+           << "{ \"" << method.get("name") << "\", "
+           << method.get("name") << "_args }," << endl;
     }
 
     body << tab << tab << tab << "{ 0, 0 }" << endl
-         << tab << tab << "};" << endl;
-
-    body << tab << tab << "static ::DBus::IntrospectedMethod " << ifaceclass << "_signals[] = " << endl
+         << tab << tab << "};" << endl
+         << tab << tab
+         << "static ::DBus::IntrospectedMethod " << ifaceclass
+         << "_signals[] = " << endl
          << tab << tab << "{" << endl;
 
     for (Xml::Nodes::iterator si = signals.begin(); si != signals.end(); ++si)
     {
       Xml::Node &method = **si;
-
-      body << tab << tab << tab << "{ \"" << method.get("name") << "\", " << method.get("name") << "_args }," << endl;
+      body << tab << tab << tab << "{ \""
+           << method.get("name") << "\", " << method.get("name") << "_args },"
+           << endl;
     }
 
     body << tab << tab << tab << "{ 0, 0 }" << endl
-         << tab << tab << "};" << endl;
-
-    body << tab << tab << "static ::DBus::IntrospectedProperty " << ifaceclass << "_properties[] = " << endl
+         << tab << tab << "};" << endl
+         << tab << tab << "static ::DBus::IntrospectedProperty "
+         << ifaceclass << "_properties[] = " << endl
          << tab << tab << "{" << endl;
 
     for (Xml::Nodes::iterator pi = properties.begin(); pi != properties.end(); ++pi)
@@ -210,22 +212,19 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
       body << tab << tab << tab << "{ "
            << "\"" << property.get("name") << "\", "
            << "\"" << property.get("type") << "\", "
-           << (property.get("access").find("read") != string::npos
-               ? "true"
-               : "false")
+           << boolalpha
+           << (property.get("access").find("read") != string::npos)
            << ", "
-           << (property.get("access").find("write") != string::npos
-               ? "true"
-               : "false")
+           << boolalpha
+           << (property.get("access").find("write") != string::npos)
            << " }," << endl;
     }
 
 
     body << tab << tab << tab << "{ 0, 0, 0, 0 }" << endl
-         << tab << tab << "};" << endl;
-
+         << tab << tab << "};" << endl
     // generate the Introspected interface
-    body << tab << tab << "static ::DBus::IntrospectedInterface " << ifaceclass << "_interface = " << endl
+         << tab << tab << "static ::DBus::IntrospectedInterface " << ifaceclass << "_interface = " << endl
          << tab << tab << "{" << endl
          << tab << tab << tab << "\"" << ifacename << "\"," << endl
          << tab << tab << tab << ifaceclass << "_methods," << endl
@@ -234,9 +233,8 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
          << tab << tab << "};" << endl
          << tab << tab << "return &" << ifaceclass << "_interface;" << endl
          << tab << "}" << endl
-         << endl;
-
-    body << "public:" << endl
+         << endl
+         << "public:" << endl
          << endl
          << tab << "/* properties exposed by this interface, use" << endl
          << tab << " * property() and property(value) to get and set a particular property" << endl
@@ -253,9 +251,8 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
       body << tab << "::DBus::PropertyAdaptor< " << type_name << " > " << name << ";" << endl;
     }
 
-    body << endl;
-
-    body << "public:" << endl
+    body << endl
+         << "public:" << endl
          << endl
          << tab << "/* methods exported by this interface," << endl
          << tab << " * you will have to implement them in your ObjectAdaptor" << endl
@@ -400,7 +397,9 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
 
       body << ")" << endl
            << tab << "{" << endl
-           << tab << tab << "::DBus::SignalMessage sig(\"" << signal.get("name") << "\");" << endl;
+           << tab << tab
+           << "::DBus::SignalMessage sig(\"" << signal.get("name") << "\");"
+           << endl;
 
       // generate the signal body
       if (!args.empty()) {
@@ -418,10 +417,12 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
             arg_object = annotations_object.front()->get("value");
 
           if (arg_object.length()) {
-            body << tab << tab << signature_to_type(arg.get("type")) << " _arg" << i + 1 << ";" << endl;
-            body << tab << tab << "_arg" << i + 1 << " << " << "arg" << i + 1 << ";" << endl;
-
-            body << tab << tab << "wi << _arg" << i + 1 << ";" << endl;
+            body << tab << tab
+                 << signature_to_type(arg.get("type")) << " _arg" << i + 1
+                 << ";" << endl
+                 << tab << tab << "_arg" << i + 1 << " << " << "arg" << i + 1
+                 << ";" << endl
+                 << tab << tab << "wi << _arg" << i + 1 << ";" << endl;
           } else
             body << tab << tab << "wi << arg" << i + 1 << ";" << endl;
         }
@@ -446,22 +447,19 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
       Xml::Nodes args_in = args.select("direction", "in");
       Xml::Nodes args_out = args.select("direction", "out");
 
-      body << tab << "::DBus::Message " << stub_name(method.get("name")) << "(const ::DBus::CallMessage &call)" << endl
+      body << tab << "::DBus::Message " << stub_name(method.get("name"))
+           << "(const ::DBus::CallMessage &call)" << endl
            << tab << "{" << endl;
-      if(!args_in.empty()) {
-         body << tab << tab << "::DBus::MessageIter ri = call.reader();" << endl;
-         body << endl;
-      }
+      if(!args_in.empty())
+         body << tab << tab
+              << "::DBus::MessageIter ri = call.reader();" << endl << endl;
 
       // generate the 'in' variables
       unsigned int i = 1;
       for (Xml::Nodes::iterator ai = args_in.begin(); ai != args_in.end(); ++ai, ++i)
-      {
-        Xml::Node &arg = **ai;
-
-        body << tab << tab << signature_to_type(arg.get("type")) << " argin" << i << "; ";
-        body << "ri >> argin" << i << ";" << endl;
-      }
+        body << tab << tab << signature_to_type((**ai).get("type"))
+             << " argin" << i << "; "
+             << "ri >> argin" << i << ";" << endl;
 
       // generate the 'in' object variables
       i = 1;
@@ -486,9 +484,8 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
         unsigned int i = 1;
         for (Xml::Nodes::iterator ao = args_out.begin(); ao != args_out.end(); ++ao, ++i)
         {
-          Xml::Node &arg = **ao;
-
-          body << tab << tab << signature_to_type(arg.get("type")) << " argout" << i;
+          body << tab << tab
+               << signature_to_type((**ao).get("type")) << " argout" << i;
 
           if (args_out.size() == 1) // a single 'out' parameter will be assigned
             body << " = ";
@@ -601,13 +598,11 @@ void generate_adaptor(Xml::Document &doc, const char *filename)
           body << tab << tab << "wi << argout" << i + 1 << ";" << endl;
       }
 
-      body << tab << tab << "return reply;" << endl;
-
-      body << tab << "}" << endl;
+      body << tab << tab << "return reply;" << endl
+           << tab << "}" << endl;
     }
 
-    body << "};" << endl
-         << endl;
+    body << "};" << endl << endl;
 
     for (unsigned int i = 0; i < nspaces; ++i)
       body << "} ";
