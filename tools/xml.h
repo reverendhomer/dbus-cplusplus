@@ -48,10 +48,7 @@ public:
 
   Error(const char *error, int line, int column);
 
-  ~Error() throw()
-  {}
-
-  const char *what() const throw()
+  const char *what() const noexcept
   {
     return _error.c_str();
   }
