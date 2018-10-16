@@ -33,6 +33,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 #include <iostream>
 #include <sstream>
 
@@ -111,8 +112,7 @@ class Document
 public:
 
   struct Expat;
-
-  Node *root;
+  std::unique_ptr<Node> root;
 
   Document();
 

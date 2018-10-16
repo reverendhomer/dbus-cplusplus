@@ -153,19 +153,14 @@ void Node::_raw_xml(std::string &xml, int &depth) const
 }
 
 Document::Document()
-  : root(0), _depth(0)
+  : root(nullptr), _depth(0)
 {
 }
 
 Document::Document(const std::string &xml)
-  : root(0), _depth(0)
+  : root(nullptr), _depth(0)
 {
   from_xml(xml);
-}
-
-Document::~Document()
-{
-  delete root;
 }
 
 struct Document::Expat
@@ -182,42 +177,45 @@ struct Document::Expat
 void Document::from_xml(const std::string &xml)
 {
   _depth = 0;
-  delete root;
-  root = 0;
 
-  XML_Parser parser = XML_ParserCreate("UTF-8");
+  struct XMLParser {
+    XML_Parser _internal;
+    explicit XMLParser(const char *encoding)
+      : _internal(XML_ParserCreate(encoding))
+    {
+    }
+    ~XMLParser()
+    {
+      XML_ParserFree(_internal);
+    }
+  };
+  auto parser = XMLParser("UTF-8");
 
-  XML_SetUserData(parser, this);
+  XML_SetUserData(parser._internal, this);
 
   XML_SetDoctypeDeclHandler(
-    parser,
+    parser._internal,
     Document::Expat::start_doctype_decl_handler,
     Document::Expat::end_doctype_decl_handler
   );
 
   XML_SetElementHandler(
-    parser,
+    parser._internal,
     Document::Expat::start_element_handler,
     Document::Expat::end_element_handler
   );
 
   XML_SetCharacterDataHandler(
-    parser,
+    parser._internal,
     Document::Expat::character_data_handler
   );
 
-  XML_Status status = XML_Parse(parser, xml.c_str(), xml.length(), true);
-
-  if (status == XML_STATUS_ERROR) {
-    const char *error = XML_ErrorString(XML_GetErrorCode(parser));
-    int line = XML_GetCurrentLineNumber(parser);
-    int column = XML_GetCurrentColumnNumber(parser);
-
-    XML_ParserFree(parser);
-
-    throw Error(error, line, column);
-  } else
-    XML_ParserFree(parser);
+  auto status = XML_Parse(parser._internal, xml.c_str(), xml.length(), true);
+  if (status == XML_STATUS_ERROR)
+    throw Error(
+      XML_ErrorString(XML_GetErrorCode(parser._internal)),
+      XML_GetCurrentLineNumber(parser._internal),
+      XML_GetCurrentColumnNumber(parser._internal));
 }
 
 std::string Document::to_xml() const
@@ -242,7 +240,7 @@ void Document::Expat::start_element_handler(void *data, const XML_Char *name, co
   //debug_log("xml:%d -> %s", doc->_depth, name);
 
   if (!doc->root)
-    doc->root = new Node(name, atts);
+    doc->root.reset(new Node(name, atts));
   else {
     Node::Children *cld = &(doc->root->children);
 
@@ -259,7 +257,7 @@ void Document::Expat::character_data_handler(void *data, const XML_Char *chars, 
 {
   Document *doc = (Document *)data;
 
-  Node *nod = doc->root;
+  Node *nod = doc->root.get();
 
   for (int i = 1; i < doc->_depth; ++i)
     nod = &(nod->children.back());
