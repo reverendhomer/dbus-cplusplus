@@ -89,13 +89,13 @@ Nodes Node::operator[](const std::string &key)
 {
   Nodes result;
 
-  if (key.length() == 0) return result;
+  if (key.empty())
+      return result;
 
   for (Children::iterator i = children.begin(); i != children.end(); ++i)
-  {
     if (i->name == key)
       result.push_back(&(*i));
-  }
+
   return result;
 }
 
@@ -127,23 +127,23 @@ void Node::_raw_xml(std::string &xml, int &depth) const
   xml.append(depth * 2, ' ');
   xml.append("<" + name);
 
-  for (Attributes::const_iterator i = _attrs.begin(); i != _attrs.end(); ++i)
-    xml.append(" " + i->first + "=\"" + i->second + "\"");
+  for (const auto& attr : _attrs)
+    xml.append(" " + attr.first + "=\"" + attr.second + "\"");
 
-  if (cdata.length() == 0 && children.size() == 0)
+  if (cdata.empty() && children.empty())
     xml.append("/>\n");
   else {
     xml.append(">");
 
-    if (cdata.length())
+    if (!cdata.empty())
       xml.append(cdata);
 
-    if (children.size()) {
+    if (!children.empty()) {
       xml.append("\n");
       depth++;
 
-      for (Children::const_iterator i = children.begin(); i != children.end(); ++i)
-        i->_raw_xml(xml, depth);
+      for (const auto& child : children)
+        child._raw_xml(xml, depth);
 
       depth--;
       xml.append(depth * 2, ' ');
@@ -224,18 +224,23 @@ std::string Document::to_xml() const
 }
 
 void Document::Expat::start_doctype_decl_handler(
-  void *data, const XML_Char *name, const XML_Char *sysid, const XML_Char *pubid, int has_internal_subset
-)
+  void */*data*/,
+  const XML_Char */*name*/,
+  const XML_Char */*sysid*/,
+  const XML_Char */*pubid*/,
+  int /*has_internal_subset*/)
 {
 }
 
-void Document::Expat::end_doctype_decl_handler(void *data)
+void Document::Expat::end_doctype_decl_handler(void */*data*/)
 {
 }
 
-void Document::Expat::start_element_handler(void *data, const XML_Char *name, const XML_Char **atts)
+void Document::Expat::start_element_handler(void *data,
+                                            const XML_Char *name,
+                                            const XML_Char **atts)
 {
-  Document *doc = (Document *)data;
+  auto doc = static_cast<Document*>(data);
 
   //debug_log("xml:%d -> %s", doc->_depth, name);
 
@@ -255,25 +260,27 @@ void Document::Expat::start_element_handler(void *data, const XML_Char *name, co
 
 void Document::Expat::character_data_handler(void *data, const XML_Char *chars, int len)
 {
-  Document *doc = (Document *)data;
+  auto doc = static_cast<Document*>(data);
 
   Node *nod = doc->root.get();
 
   for (int i = 1; i < doc->_depth; ++i)
-    nod = &(nod->children.back());
+    nod = &nod->children.back();
 
-  int x = 0;
-  int y = len - 1;
+  auto x = 0;
+  auto y = len - 1;
 
-  while (isspace(chars[y]) && y > 0) --y;
-  while (isspace(chars[x]) && x < y) ++x;
+  while (y > 0 && isspace(chars[y]))
+    --y;
+  while (x < y && isspace(chars[x]))
+    ++x;
 
   nod->cdata = std::string(chars, x, y + 1);
 }
 
-void Document::Expat::end_element_handler(void *data, const XML_Char *name)
+void Document::Expat::end_element_handler(void *data, const XML_Char */*name*/)
 {
-  Document *doc = (Document *)data;
+  auto doc = static_cast<Document*>(data);
 
   //debug_log("xml:%d <- %s", doc->_depth, name);
 
