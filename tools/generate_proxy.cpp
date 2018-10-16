@@ -38,7 +38,7 @@ extern const char *dbus_includes;
 
 /*! Generate proxy code for a XML introspection
   */
-void generate_proxy(Xml::Document &doc, const char *filename)
+void generate_proxy(const Xml::Document &doc, const char *filename)
 {
   ostringstream body;
   ostringstream head;
