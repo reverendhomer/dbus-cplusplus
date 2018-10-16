@@ -99,9 +99,9 @@ Nodes Node::operator[](const std::string &key)
   return result;
 }
 
-std::string Node::get(const std::string &attribute)
+std::string Node::get(const std::string &attribute) const noexcept
 {
-  return _attrs.find(attribute) != _attrs.end() ? _attrs[attribute] : "";
+  return _attrs.find(attribute) != _attrs.end() ? _attrs.at(attribute) : "";
 }
 
 void Node::set(const std::string &attribute, std::string value)

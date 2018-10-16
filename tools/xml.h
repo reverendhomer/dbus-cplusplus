@@ -72,16 +72,14 @@ public:
 class Node
 {
 public:
-
-  typedef std::map<std::string, std::string> Attributes;
-
-  typedef std::vector<Node> Children;
+  using Attributes = std::map<std::string, std::string>;
+  using Children = std::vector<Node>;
 
   std::string name;
   std::string cdata;
   Children children;
 
-  Node(std::string &n, Attributes &a)
+  Node(const std::string &n, Attributes &a)
     : name(n), _attrs(a)
   {}
 
@@ -89,7 +87,7 @@ public:
 
   Nodes operator[](const std::string &key);
 
-  std::string get(const std::string &attribute);
+  std::string get(const std::string &attribute) const noexcept;
 
   void set(const std::string &attribute, std::string value);
 
