@@ -83,7 +83,8 @@ BusDispatcher::BusDispatcher() :
   // pipe to create a new fd used to unlock a dispatcher at any
   // moment (used by leave function)
   int ret = pipe(_pipe);
-  if (ret == -1) throw Error("PipeError:errno", toString(errno).c_str());
+  if (ret == -1)
+    throw Error("PipeError:errno", to_string(errno).c_str());
 
   _fdunlock[0] = _pipe[0];
   _fdunlock[1] = _pipe[1];
@@ -123,7 +124,8 @@ void BusDispatcher::leave()
   _running = false;
 
   int ret = write(_fdunlock[1], "exit", strlen("exit"));
-  if (ret == -1) throw Error("WriteError:errno", toString(errno).c_str());
+  if (ret == -1)
+    throw Error("WriteError:errno", to_string(errno).c_str());
 
   close(_fdunlock[1]);
   close(_fdunlock[0]);

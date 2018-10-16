@@ -55,9 +55,7 @@ Pipe::Pipe(void(*handler)(const void *data, void *buffer, unsigned int nbyte), c
     fcntl(_fd_read, F_SETFL, O_NONBLOCK);
   }
   else
-  {
-    throw Error("PipeError:errno", toString(errno).c_str());
-  }
+    throw Error("PipeError:errno", to_string(errno).c_str());
 }
 
 void Pipe::write(const void *buffer, unsigned int nbytes)

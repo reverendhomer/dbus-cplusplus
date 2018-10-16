@@ -289,15 +289,6 @@ private:
   M _m;
 };
 
-/// create std::string from any number
-template <typename T>
-std::string toString(const T &thing, int w = 0, int p = 0)
-{
-  std::ostringstream os;
-  os << std::setw(w) << std::setprecision(p) << thing;
-  return os.str();
-}
-
 } /* namespace DBus */
 
 #endif//__DBUSXX_UTIL_H
