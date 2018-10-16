@@ -64,28 +64,24 @@ Node::Node(const char *n, const char **a)
     }
 }
 
-Nodes Nodes::operator[](const std::string &key)
+Nodes Nodes::operator[](const std::string &key) const
 {
   Nodes result;
 
-  for (iterator i = begin(); i != end(); ++i)
-  {
-    Nodes part = (**i)[key];
-
-    result.insert(result.end(), part.begin(), part.end());
+  for (const auto val : *this) {
+      Nodes part = (*val)[key];
+      result.insert(result.end(), part.begin(), part.end());
   }
   return result;
 }
 
-Nodes Nodes::select(const std::string &attr, const std::string &value)
+Nodes Nodes::select(const std::string &attr, const std::string &value) const
 {
   Nodes result;
 
-  for (iterator i = begin(); i != end(); ++i)
-  {
-    if ((*i)->get(attr) == value)
-      result.insert(result.end(), *i);
-  }
+  for (const auto val : *this)
+      if (val->get(attr) == value)
+          result.insert(result.end(), val);
   return result;
 }
 

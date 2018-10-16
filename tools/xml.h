@@ -64,9 +64,9 @@ class Nodes : public std::vector<Node *>
 {
 public:
 
-  Nodes operator[](const std::string &key);
+  Nodes operator[](const std::string &key) const;
 
-  Nodes select(const std::string &attr, const std::string &value);
+  Nodes select(const std::string &attr, const std::string &value) const;
 };
 
 class Node
