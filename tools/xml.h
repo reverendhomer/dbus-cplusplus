@@ -116,9 +116,7 @@ public:
 
   Document();
 
-  Document(const std::string &xml);
-
-  ~Document();
+  explicit Document(const std::string &xml);
 
   void from_xml(const std::string &xml);
 
