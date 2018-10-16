@@ -38,7 +38,7 @@ extern const char *dbus_includes;
 
 /*! Generate adaptor code for a XML introspection
   */
-void generate_adaptor(Xml::Document &doc, const char *filename)
+void generate_adaptor(const Xml::Document &doc, const char *filename)
 {
   ostringstream body;
   ostringstream head;
