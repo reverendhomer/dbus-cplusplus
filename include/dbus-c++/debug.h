@@ -29,11 +29,8 @@
 
 namespace DBus
 {
-
-typedef void (*LogFunction)(const char *format, ...);
-
+using LogFunction = void(*)(const char *format, ...);
 extern DXXAPI LogFunction debug_log;
-
 } /* namespace DBus */
 
 #endif

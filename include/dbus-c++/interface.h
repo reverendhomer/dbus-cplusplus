@@ -45,7 +45,7 @@ struct DXXAPI PropertyData
   Variant		value;
 };
 
-typedef std::map<std::string, PropertyData>	PropertyTable;
+using PropertyTable = std::map<std::string, PropertyData>;
 
 class IntrospectedInterface;
 
@@ -53,7 +53,7 @@ class ObjectAdaptor;
 class InterfaceAdaptor;
 class SignalMessage;
 
-typedef std::map<std::string, InterfaceAdaptor *> InterfaceAdaptorTable;
+using InterfaceAdaptorTable = std::map<std::string, InterfaceAdaptor *>;
 
 class DXXAPI AdaptorBase
 {
@@ -80,7 +80,7 @@ class ObjectProxy;
 class InterfaceProxy;
 class CallMessage;
 
-typedef std::map<std::string, InterfaceProxy *> InterfaceProxyTable;
+using InterfaceProxyTable = std::map<std::string, InterfaceProxy *>;
 
 class DXXAPI ProxyBase
 {
@@ -128,7 +128,7 @@ const std::string &Interface::name() const
 /*
 */
 
-typedef std::map< std::string, Slot<Message, const CallMessage &> > MethodTable;
+using MethodTable = std::map<std::string, Slot<Message, const CallMessage &>>;
 
 class DXXAPI InterfaceAdaptor : public Interface, public virtual AdaptorBase
 {
@@ -158,7 +158,7 @@ protected:
 /*
 */
 
-typedef std::map< std::string, Slot<void, const SignalMessage &> > SignalTable;
+using SignalTable = std::map<std::string, Slot<void, const SignalMessage &>>;
 
 class DXXAPI InterfaceProxy : public Interface, public virtual ProxyBase
 {

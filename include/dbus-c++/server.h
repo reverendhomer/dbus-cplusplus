@@ -38,7 +38,7 @@ namespace DBus
 
 class Server;
 
-typedef std::list<Server> ServerList;
+using ServerList = std::list<Server>;
 
 class DXXAPI Server
 {

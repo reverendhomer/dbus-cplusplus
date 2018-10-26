@@ -38,9 +38,8 @@ namespace DBus
 
 class Connection;
 
-typedef Slot<bool, const Message &> MessageSlot;
-
-typedef std::list<Connection>	ConnectionList;
+using MessageSlot = Slot<bool, const Message &>;
+using ConnectionList = std::list<Connection>;
 
 class ObjectAdaptor;
 class Dispatcher;
@@ -57,7 +56,7 @@ public:
 
   struct Private;
 
-  typedef std::list<Private *> PrivatePList;
+  using PrivatePList = std::list<Private *>;
 
   Connection(Private *);
 

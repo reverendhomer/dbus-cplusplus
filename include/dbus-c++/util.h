@@ -102,7 +102,7 @@ class Callback : public Callback_Base<R, P>
 {
 public:
 
-  typedef R(C::*M)(P);
+  using M = R(C::*)(P);
 
   Callback(C *c, M m)
     : _c(c), _m(m)

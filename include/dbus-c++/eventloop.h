@@ -105,7 +105,7 @@ private:
   friend class DefaultMainLoop;
 };
 
-typedef std::list< DefaultTimeout *> DefaultTimeouts;
+using DefaultTimeouts = std::list<DefaultTimeout *>;
 
 class DXXAPI DefaultWatch
 {
@@ -169,7 +169,6 @@ private:
   friend class DefaultMainLoop;
 };
 
-typedef std::list< DefaultWatch *> DefaultWatches;
 
 class DXXAPI DefaultMutex
 {
@@ -196,6 +195,7 @@ private:
 
   pthread_mutex_t _mutex;
 };
+using DefaultWatches = std::list<DefaultWatch *>;
 
 class DXXAPI DefaultMainLoop
 {

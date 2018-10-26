@@ -110,8 +110,8 @@ public:
 
 class ObjectAdaptor;
 
-typedef std::list<ObjectAdaptor *> ObjectAdaptorPList;
-typedef std::list<std::string> ObjectPathList;
+using ObjectAdaptorPList = std::list<ObjectAdaptor *>;
+using ObjectPathList = std::list<std::string>;
 
 class DXXAPI ObjectAdaptor : public Object, public virtual AdaptorBase
 {
@@ -197,7 +197,7 @@ MessageIter &ObjectAdaptor::Continuation::writer()
 
 class ObjectProxy;
 
-typedef std::list<ObjectProxy *> ObjectProxyPList;
+using ObjectProxyPList = std::list<ObjectProxy *>;
 
 class DXXAPI ObjectProxy : public Object, public virtual ProxyBase
 {
