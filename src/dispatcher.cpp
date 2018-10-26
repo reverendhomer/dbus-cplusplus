@@ -72,14 +72,7 @@ int Watch::descriptor() const noexcept
 #if HAVE_WIN32
   return dbus_watch_get_socket((DBusWatch *)_int);
 #else
-  // check dbus version and use dbus_watch_get_unix_fd() only in dbus >= 1.1.1
-#if (DBUS_VERSION_MAJOR == 1 && DBUS_VERSION_MINOR == 1 && DBUS_VERSION_MICRO >= 1) || \
-		(DBUS_VERSION_MAJOR == 1 && DBUS_VERSION_MAJOR > 1) || \
-		(DBUS_VERSION_MAJOR > 1)
   return dbus_watch_get_unix_fd((DBusWatch *)_int);
-#else
-  return dbus_watch_get_fd((DBusWatch *)_int);
-#endif
 #endif
 }
 
