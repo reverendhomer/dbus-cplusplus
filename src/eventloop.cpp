@@ -49,71 +49,31 @@ DefaultTimeout::DefaultTimeout(int interval, bool repeat, DefaultMainLoop *ed)
 
   _expiration = millis(now) + interval;
 
-  _disp->_mutex_t.lock();
+  std::lock_guard<std::mutex> lck(_disp->_mutex_t);
   _disp->_timeouts.push_back(this);
-  _disp->_mutex_t.unlock();
 }
 
 DefaultTimeout::~DefaultTimeout()
 {
-  _disp->_mutex_t.lock();
+  std::lock_guard<std::mutex> lck(_disp->_mutex_t);
   _disp->_timeouts.remove(this);
-  _disp->_mutex_t.unlock();
 }
 
 DefaultWatch::DefaultWatch(int fd, int flags, DefaultMainLoop *ed)
   : _enabled(true), _fd(fd), _flags(flags), _state(0), _data(0), _disp(ed)
 {
-  _disp->_mutex_w.lock();
+  std::lock_guard<std::recursive_mutex> lck(_disp->_mutex_w);
   _disp->_watches.push_back(this);
-  _disp->_mutex_w.unlock();
 }
 
 DefaultWatch::~DefaultWatch()
 {
-  _disp->_mutex_w.lock();
+  std::lock_guard<std::recursive_mutex> lck(_disp->_mutex_w);
   _disp->_watches.remove(this);
-  _disp->_mutex_w.unlock();
-}
-
-DefaultMutex::DefaultMutex()
-{
-  pthread_mutex_init(&_mutex, NULL);
-}
-
-DefaultMutex::DefaultMutex(bool recursive)
-{
-  if (recursive)
-  {
-    pthread_mutexattr_t attr;
-
-    pthread_mutexattr_init(&attr);
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-    pthread_mutex_init(&_mutex, &attr);
-  }
-  else
-  {
-    pthread_mutex_init(&_mutex, NULL);
-  }
-}
-
-DefaultMutex::~DefaultMutex()
-{
-  pthread_mutex_destroy(&_mutex);
-}
-
-void DefaultMutex::lock()
-{
-  pthread_mutex_lock(&_mutex);
-}
-
-void DefaultMutex::unlock()
-{
-  pthread_mutex_unlock(&_mutex);
 }
 
 DefaultMainLoop::DefaultMainLoop() :
-  _mutex_w(true)
+  _mutex_w()
 {
 }
 
@@ -191,17 +151,12 @@ void DefaultMainLoop::dispatch()
 
   int wait_min = 10000;
 
-  DefaultTimeouts::iterator ti;
-
-  _mutex_t.lock();
-
-  for (ti = _timeouts.begin(); ti != _timeouts.end(); ++ti)
   {
-    if ((*ti)->enabled() && (*ti)->interval() < wait_min)
-      wait_min = (*ti)->interval();
+    std::lock_guard<std::mutex> lck(_mutex_t);
+    for (const auto& timeout : _timeouts)
+      if (timeout->enabled() && timeout->interval() < wait_min)
+        wait_min = timeout->interval();
   }
-
-  _mutex_t.unlock();
 
   poll(fds, nfd, wait_min);
 
@@ -210,57 +165,42 @@ void DefaultMainLoop::dispatch()
 
   double now_millis = millis(now);
 
-  _mutex_t.lock();
-
-  ti = _timeouts.begin();
-
-  while (ti != _timeouts.end())
   {
-    DefaultTimeouts::iterator tmp = ti;
-    ++tmp;
+    std::lock_guard<std::mutex> lck(_mutex_t);
+    auto ti = _timeouts.begin();
 
-    if ((*ti)->enabled() && now_millis >= (*ti)->_expiration)
-    {
-      (*ti)->expired(*(*ti));
-
-      if ((*ti)->_repeat)
-      {
-        (*ti)->_expiration = now_millis + (*ti)->_interval;
-      }
-
-    }
-
-    ti = tmp;
-  }
-
-  _mutex_t.unlock();
-
-  _mutex_w.lock();
-
-  for (int j = 0; j < nfd; ++j)
-  {
-    DefaultWatches::iterator wi;
-
-    for (wi = _watches.begin(); wi != _watches.end();)
-    {
-      DefaultWatches::iterator tmp = wi;
+    while (ti != _timeouts.end()) {
+      auto tmp = ti;
       ++tmp;
 
-      if ((*wi)->enabled() && (*wi)->_fd == fds[j].fd)
-      {
-        if (fds[j].revents)
-        {
-          (*wi)->_state = fds[j].revents;
+      if ((*ti)->enabled() && now_millis >= (*ti)->_expiration) {
+        (*ti)->expired(*(*ti));
 
-          (*wi)->ready(*(*wi));
-
-          fds[j].revents = 0;
-        }
+        if ((*ti)->_repeat)
+          (*ti)->_expiration = now_millis + (*ti)->_interval;
       }
 
-      wi = tmp;
+      ti = tmp;
     }
   }
-  _mutex_w.unlock();
+
+  {
+    std::lock_guard<std::recursive_mutex> lck(_mutex_w);
+    for (size_t j = 0; j < nfd; ++j) {
+      for (auto wi = _watches.begin(); wi != _watches.end();) {
+        auto tmp = wi;
+        ++tmp;
+
+        if ((*wi)->enabled() && (*wi)->_fd == fds[j].fd) {
+          if (fds[j].revents) {
+            (*wi)->_state = fds[j].revents;
+            (*wi)->ready(*(*wi));
+            fds[j].revents = 0;
+          }
+        }
+        wi = tmp;
+      }
+    }
+  }
 }
 

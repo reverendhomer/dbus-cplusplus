@@ -27,6 +27,7 @@
 
 #include <pthread.h>
 #include <list>
+#include <mutex>
 
 #include "api.h"
 #include "util.h"
@@ -169,32 +170,6 @@ private:
   friend class DefaultMainLoop;
 };
 
-
-class DXXAPI DefaultMutex
-{
-public:
-
-  /*!
-   * Constructor for non recursive Mutex
-   */
-  DefaultMutex();
-
-  /*!
-   * Constructor
-   * \param recursive Set if Mutex should be recursive or not.
-   */
-  DefaultMutex(bool recursive);
-
-  ~DefaultMutex();
-
-  void lock();
-
-  void unlock();
-
-private:
-
-  pthread_mutex_t _mutex;
-};
 using DefaultWatches = std::list<DefaultWatch *>;
 
 class DXXAPI DefaultMainLoop
@@ -210,10 +185,10 @@ public:
   int _fdunlock[2];
 private:
 
-  DefaultMutex _mutex_t;
+  std::mutex _mutex_t;
   DefaultTimeouts _timeouts;
 
-  DefaultMutex _mutex_w;
+  std::recursive_mutex _mutex_w;
   DefaultWatches _watches;
 
   friend class DefaultTimeout;
