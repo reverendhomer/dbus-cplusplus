@@ -71,6 +71,11 @@ struct DXXAPI InternalError
   {
     return dbus_error_is_set(&error);
   }
+
+  DBusError* operator->()
+  {
+    return &error;
+  }
 };
 
 } /* namespace DBus */
