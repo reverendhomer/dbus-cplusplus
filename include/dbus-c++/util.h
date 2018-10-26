@@ -45,11 +45,8 @@ template <class R, class P>
 class Callback_Base
 {
 public:
-
   virtual R call(P param) const = 0;
-
-  virtual ~Callback_Base()
-  {}
+  virtual ~Callback_Base() = default;
 };
 
 template <class R, class P>
@@ -87,9 +84,9 @@ public:
     //assert (false);
   }
 
-  bool empty() const
+  inline bool empty() const noexcept
   {
-    return _cb.get() == 0;
+    return _cb.get() == nullptr;
   }
 
 private:

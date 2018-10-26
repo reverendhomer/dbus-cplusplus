@@ -387,7 +387,7 @@ Message Connection::send_blocking(Message &msg, int timeout)
 
 PendingCall Connection::send_async(Message &msg, int timeout)
 {
-  DBusPendingCall *pending;
+  DBusPendingCall *pending = nullptr;
 
   if (!dbus_connection_send_with_reply(_pvt->conn, msg._pvt->msg, &pending, timeout))
   {

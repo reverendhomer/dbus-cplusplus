@@ -39,60 +39,48 @@ namespace DBus
 
 class DXXAPI Object
 {
+private:
+  Connection	_conn;
+  DBus::Path	_path;
+  std::string	_service;
+  int		_default_timeout;
+
 protected:
 
   Object(Connection &conn, const Path &path, const char *service);
 
 public:
 
-  virtual ~Object();
+  virtual ~Object() = default;
 
-  inline const DBus::Path &path() const;
+  inline const DBus::Path &path() const noexcept
+  {
+    return _path;
+  }
 
-  inline const std::string &service() const;
+  inline const std::string &service() const noexcept
+  {
+    return _service;
+  }
 
-  inline Connection &conn();
+  inline Connection &conn() noexcept
+  {
+    return _conn;
+  }
 
   void set_timeout(int new_timeout = -1);
 
-  inline int get_timeout() const;
+  inline int get_timeout() const noexcept
+  {
+    return _default_timeout;
+  }
 
 private:
 
   DXXAPILOCAL virtual bool handle_message(const Message &) = 0;
   DXXAPILOCAL virtual void register_obj() = 0;
   DXXAPILOCAL virtual void unregister_obj(bool throw_on_error = true) = 0;
-
-private:
-
-  Connection	_conn;
-  DBus::Path	_path;
-  std::string	_service;
-  int		_default_timeout;
 };
-
-/*
-*/
-
-Connection &Object::conn()
-{
-  return _conn;
-}
-
-const DBus::Path &Object::path() const
-{
-  return _path;
-}
-
-const std::string &Object::service() const
-{
-  return _service;
-}
-
-int Object::get_timeout() const
-{
-  return _default_timeout;
-}
 
 /*
 */
@@ -100,9 +88,7 @@ int Object::get_timeout() const
 class DXXAPI Tag
 {
 public:
-
-  virtual ~Tag()
-  {}
+  virtual ~Tag() = default;
 };
 
 /*
@@ -129,7 +115,10 @@ public:
 
   ~ObjectAdaptor();
 
-  inline const ObjectAdaptor *object() const;
+  inline const ObjectAdaptor *object() const noexcept
+  {
+    return this;
+  }
 
 protected:
 
@@ -137,9 +126,14 @@ protected:
   {
   public:
 
-    inline MessageIter &writer();
-
-    inline Tag *tag();
+    inline MessageIter &writer() noexcept
+    {
+      return _writer;
+    }
+    inline Tag *tag() noexcept
+    {
+      return const_cast<Tag *>(tag);
+    }
 
   private:
 
@@ -177,21 +171,6 @@ private:
   friend struct Private;
 };
 
-const ObjectAdaptor *ObjectAdaptor::object() const
-{
-  return this;
-}
-
-Tag *ObjectAdaptor::Continuation::tag()
-{
-  return const_cast<Tag *>(_tag);
-}
-
-MessageIter &ObjectAdaptor::Continuation::writer()
-{
-  return _writer;
-}
-
 /*
 */
 
@@ -207,7 +186,10 @@ public:
 
   ~ObjectProxy();
 
-  inline const ObjectProxy *object() const;
+  inline const ObjectProxy *object() const noexcept
+  {
+    return this;
+  }
 
 private:
 
@@ -224,11 +206,6 @@ private:
 
   MessageSlot _filtered;
 };
-
-const ObjectProxy *ObjectProxy::object() const
-{
-  return this;
-}
 
 } /* namespace DBus */
 

@@ -103,7 +103,7 @@ public:
    *
    * @return The file descriptor.
    */
-  int descriptor() const;
+  int descriptor() const noexcept;
 
   /*!
    * \brief Gets flags from DBusWatchFlags indicating what conditions should be
@@ -115,9 +115,9 @@ public:
    *
    * @return The conditions to watch.
    */
-  int flags() const;
+  int flags() const noexcept;
 
-  bool enabled() const;
+  bool enabled() const noexcept;
 
   /*!
    * \brief Called to notify the D-Bus library when a previously-added watch
@@ -137,7 +137,7 @@ public:
    * @param flags The poll condition using DBusWatchFlags values.
    * @return false If there wasn't enough memory.
    */
-  bool handle(int flags);
+  bool handle(int flags) noexcept;
 
   virtual void toggle() = 0;
 

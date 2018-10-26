@@ -44,10 +44,6 @@ Object::Object(Connection &conn, const Path &path, const char *service)
 {
 }
 
-Object::~Object()
-{
-}
-
 void Object::set_timeout(int new_timeout)
 {
   debug_log("%s: %d millies", __PRETTY_FUNCTION__, new_timeout);
@@ -66,7 +62,7 @@ static DBusObjectPathVTable _vtable =
 {
   ObjectAdaptor::Private::unregister_function_stub,
   ObjectAdaptor::Private::message_function_stub,
-  NULL, NULL, NULL, NULL
+  nullptr, nullptr, nullptr, nullptr
 };
 
 void ObjectAdaptor::Private::unregister_function_stub(DBusConnection *conn, void *data)

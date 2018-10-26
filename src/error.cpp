@@ -58,10 +58,6 @@ Error::Error(Message &m)
   dbus_set_error_from_message(&(_int->error), m._pvt->msg);
 }
 
-Error::~Error() throw()
-{
-}
-
 const char *Error::name() const
 {
   return _int->error.name;
@@ -82,7 +78,7 @@ void Error::set(const char *name, const char *message)
   dbus_set_error_const(&(_int->error), name, message);
 }
 
-const char *Error::what() const throw()
+const char *Error::what() const noexcept
 {
   return _int->error.message;
 }

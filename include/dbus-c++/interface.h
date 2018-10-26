@@ -146,7 +146,7 @@ public:
 
   virtual IntrospectedInterface *introspect() const
   {
-    return NULL;
+    return nullptr;
   }
 
 protected:

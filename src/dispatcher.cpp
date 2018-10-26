@@ -67,7 +67,7 @@ Watch::Watch(Watch::Internal *i)
   dbus_watch_set_data((DBusWatch *)i, this, NULL);
 }
 
-int Watch::descriptor() const
+int Watch::descriptor() const noexcept
 {
 #if HAVE_WIN32
   return dbus_watch_get_socket((DBusWatch *)_int);
@@ -83,17 +83,17 @@ int Watch::descriptor() const
 #endif
 }
 
-int Watch::flags() const
+int Watch::flags() const noexcept
 {
   return dbus_watch_get_flags((DBusWatch *)_int);
 }
 
-bool Watch::enabled() const
+bool Watch::enabled() const noexcept
 {
   return dbus_watch_get_enabled((DBusWatch *)_int);
 }
 
-bool Watch::handle(int flags)
+bool Watch::handle(int flags) noexcept
 {
   return dbus_watch_handle((DBusWatch *)_int, flags);
 }

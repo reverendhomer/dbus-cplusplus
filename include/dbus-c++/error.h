@@ -48,9 +48,9 @@ public:
 
   Error(Message &);
 
-  ~Error() throw();
+  virtual ~Error() = default;
 
-  const char *what() const throw();
+  const char *what() const noexcept;
 
   const char *name() const;
 
@@ -61,7 +61,7 @@ public:
 
   bool is_set() const;
 
-  operator bool() const
+  inline operator bool() const
   {
     return is_set();
   }
