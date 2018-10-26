@@ -253,30 +253,19 @@ void ObjectAdaptor::return_later(const Tag *tag)
 void ObjectAdaptor::return_now(Continuation *ret)
 {
   ret->_conn.send(ret->_return);
-
-  ContinuationMap::iterator di = _continuations.find(ret->_tag);
-
-  delete di->second;
-
-  _continuations.erase(di);
+  _continuations.erase(ret->_tag);
 }
 
 void ObjectAdaptor::return_error(Continuation *ret, const Error error)
 {
   ret->_conn.send(ErrorMessage(ret->_call, error.name(), error.message()));
-
-  ContinuationMap::iterator di = _continuations.find(ret->_tag);
-
-  delete di->second;
-
-  _continuations.erase(di);
+  _continuations.erase(ret->_tag);
 }
 
 ObjectAdaptor::Continuation *ObjectAdaptor::find_continuation(const Tag *tag)
 {
-  ContinuationMap::iterator di = _continuations.find(tag);
-
-  return di != _continuations.end() ? di->second : NULL;
+  auto di = _continuations.find(tag);
+  return di != _continuations.end() ? di->second.get() : nullptr;
 }
 
 ObjectAdaptor::Continuation::Continuation(Connection &conn, const CallMessage &call, const Tag *tag)

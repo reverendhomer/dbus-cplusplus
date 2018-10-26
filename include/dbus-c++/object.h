@@ -27,6 +27,7 @@
 
 #include <string>
 #include <list>
+#include <memory>
 
 #include "api.h"
 #include "interface.h"
@@ -124,7 +125,17 @@ protected:
 
   class DXXAPI Continuation
   {
+  private:
+    Connection _conn;
+    CallMessage _call;
+    MessageIter _writer;
+    ReturnMessage _return;
+    const Tag *_tag;
+
+    friend class ObjectAdaptor;
+
   public:
+    Continuation(Connection &conn, const CallMessage &call, const Tag *tag);
 
     inline MessageIter &writer() noexcept
     {
@@ -134,18 +145,6 @@ protected:
     {
       return const_cast<Tag *>(tag);
     }
-
-  private:
-
-    Continuation(Connection &conn, const CallMessage &call, const Tag *tag);
-
-    Connection _conn;
-    CallMessage _call;
-    MessageIter _writer;
-    ReturnMessage _return;
-    const Tag *_tag;
-
-    friend class ObjectAdaptor;
   };
 
   void return_later(const Tag *tag);
@@ -165,8 +164,7 @@ private:
   void register_obj();
   void unregister_obj(bool throw_on_error = true);
 
-  typedef std::map<const Tag *, Continuation *> ContinuationMap;
-  ContinuationMap _continuations;
+  std::map<const Tag *, std::unique_ptr<Continuation>> _continuations;
 
   friend struct Private;
 };
