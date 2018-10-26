@@ -143,7 +143,7 @@ protected:
     }
     inline Tag *tag() noexcept
     {
-      return const_cast<Tag *>(tag);
+      return const_cast<Tag *>(_tag);
     }
   };
 
