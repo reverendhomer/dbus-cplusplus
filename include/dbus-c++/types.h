@@ -146,7 +146,6 @@ struct type
   static std::string sig()
   {
     throw ErrorInvalidArgs("unknown type");
-    return "";
   }
 };
 
@@ -392,14 +391,9 @@ inline DBus::MessageIter &operator << (DBus::MessageIter &iter, const DBus::Sign
 template<typename E>
 inline DBus::MessageIter &operator << (DBus::MessageIter &iter, const std::vector<E>& val)
 {
-  const std::string sig = DBus::type<E>::sig();
-  DBus::MessageIter ait = iter.new_array(sig.c_str());
-
-  typename std::vector<E>::const_iterator vit;
-  for (vit = val.begin(); vit != val.end(); ++vit)
-  {
-    ait << *vit;
-  }
+  auto ait = iter.new_array(DBus::type<E>::sig().c_str());
+  for (const auto& vit : val)
+    ait << vit;
 
   iter.close_container(ait);
   return iter;
@@ -408,7 +402,7 @@ inline DBus::MessageIter &operator << (DBus::MessageIter &iter, const std::vecto
 template<>
 inline DBus::MessageIter &operator << (DBus::MessageIter &iter, const std::vector<uint8_t>& val)
 {
-  DBus::MessageIter ait = iter.new_array("y");
+  auto ait = iter.new_array("y");
   ait.append_array('y', &val.front(), val.size());
   iter.close_container(ait);
   return iter;
@@ -417,16 +411,13 @@ inline DBus::MessageIter &operator << (DBus::MessageIter &iter, const std::vecto
 template<typename K, typename V>
 inline DBus::MessageIter &operator << (DBus::MessageIter &iter, const std::map<K, V>& val)
 {
-  const std::string sig = "{" + DBus::type<K>::sig() + DBus::type<V>::sig() + "}";
-  DBus::MessageIter ait = iter.new_array(sig.c_str());
+  const auto sig = "{" + DBus::type<K>::sig() + DBus::type<V>::sig() + "}";
+  auto ait = iter.new_array(sig.c_str());
 
   typename std::map<K, V>::const_iterator mit;
-  for (mit = val.begin(); mit != val.end(); ++mit)
-  {
-    DBus::MessageIter eit = ait.new_dict_entry();
-
-    eit << mit->first << mit->second;
-
+  for (const auto& mit : val) {
+    auto eit = ait.new_dict_entry();
+    eit << mit.first << mit.second;
     ait.close_container(eit);
   }
 
@@ -553,10 +544,9 @@ inline DBus::MessageIter &operator >> (DBus::MessageIter &iter, std::vector<E>& 
   if (!iter.is_array())
     throw DBus::ErrorInvalidArgs("array expected");
 
-  DBus::MessageIter ait = iter.recurse();
+  auto ait = iter.recurse();
 
-  while (!ait.at_end())
-  {
+  while (!ait.at_end()) {
     E elem;
 
     ait >> elem;
@@ -575,10 +565,8 @@ inline DBus::MessageIter &operator >> (DBus::MessageIter &iter, std::vector<uint
   if (iter.array_type() != 'y')
     throw DBus::ErrorInvalidArgs("byte-array expected");
 
-  DBus::MessageIter ait = iter.recurse();
-
   uint8_t *array;
-  size_t length = ait.get_array(&array);
+  auto length = iter.recurse().get_array(&array);
 
   val.insert(val.end(), array, array + length);
 
@@ -593,14 +581,12 @@ inline DBus::MessageIter &operator >> (DBus::MessageIter &iter, std::map<K, V>& 
 
   DBus::MessageIter mit = iter.recurse();
 
-  while (!mit.at_end())
-  {
+  while (!mit.at_end()) {
     K key;
     V value;
 
-    DBus::MessageIter eit = mit.recurse();
-
-    eit >> key >> value;
+    auto ait = mit.recurse();
+    ait >> key >> value;
 
     val[key] = value;
 
@@ -630,13 +616,11 @@ typename T1,
          >
 inline DBus::MessageIter &operator >> (DBus::MessageIter &iter, DBus::Struct<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>& val)
 {
-  DBus::MessageIter sit = iter.recurse();
-
-  sit >> val._1 >> val._2 >> val._3 >> val._4
+  auto ait = iter.recurse();
+  ait >> val._1 >> val._2 >> val._3 >> val._4
       >> val._5 >> val._6 >> val._7 >> val._8
       >> val._9 >> val._10 >> val._11 >> val._12
       >> val._13 >> val._14 >> val._15 >> val._16;
-
   return ++iter;
 }
 
@@ -652,4 +636,3 @@ inline DBus::Variant::operator T() const
 } /* namespace DBus */
 
 #endif//__DBUSXX_TYPES_H
-

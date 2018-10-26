@@ -96,56 +96,38 @@ bool Watch::handle(int flags) noexcept
 
 dbus_bool_t Dispatcher::Private::on_add_watch(DBusWatch *watch, void *data)
 {
-  Dispatcher *d = static_cast<Dispatcher *>(data);
-
-  Watch::Internal *w = reinterpret_cast<Watch::Internal *>(watch);
-
-  d->add_watch(w);
-
+  auto d = static_cast<Dispatcher *>(data);
+  d->add_watch(reinterpret_cast<Watch::Internal *>(watch));
   return true;
 }
 
 void Dispatcher::Private::on_rem_watch(DBusWatch *watch, void *data)
 {
-  Dispatcher *d = static_cast<Dispatcher *>(data);
-
-  Watch *w = static_cast<Watch *>(dbus_watch_get_data(watch));
-
-  d->rem_watch(w);
+  auto d = static_cast<Dispatcher *>(data);
+  d->rem_watch(static_cast<Watch *>(dbus_watch_get_data(watch)));
 }
 
 void Dispatcher::Private::on_toggle_watch(DBusWatch *watch, void *data)
 {
-  Watch *w = static_cast<Watch *>(dbus_watch_get_data(watch));
-
-  w->toggle();
+  static_cast<Watch *>(dbus_watch_get_data(watch))->toggle();
 }
 
 dbus_bool_t Dispatcher::Private::on_add_timeout(DBusTimeout *timeout, void *data)
 {
-  Dispatcher *d = static_cast<Dispatcher *>(data);
-
-  Timeout::Internal *t = reinterpret_cast<Timeout::Internal *>(timeout);
-
-  d->add_timeout(t);
-
+  auto d = static_cast<Dispatcher *>(data);
+  d->add_timeout(reinterpret_cast<Timeout::Internal *>(timeout));
   return true;
 }
 
 void Dispatcher::Private::on_rem_timeout(DBusTimeout *timeout, void *data)
 {
-  Dispatcher *d = static_cast<Dispatcher *>(data);
-
-  Timeout *t = static_cast<Timeout *>(dbus_timeout_get_data(timeout));
-
-  d->rem_timeout(t);
+  auto d = static_cast<Dispatcher *>(data);
+  d->rem_timeout(static_cast<Timeout *>(dbus_timeout_get_data(timeout)));
 }
 
 void Dispatcher::Private::on_toggle_timeout(DBusTimeout *timeout, void *data)
 {
-  Timeout *t = static_cast<Timeout *>(dbus_timeout_get_data(timeout));
-
-  t->toggle();
+  static_cast<Timeout *>(dbus_timeout_get_data(timeout))->toggle();
 }
 
 void Dispatcher::queue_connection(Connection::Private *cp)
@@ -167,11 +149,9 @@ bool Dispatcher::has_something_to_dispatch()
 
 void Dispatcher::dispatch_pending()
 {
-  while (1)
-  {
+  while (true) {
     _mutex_p.lock();
-    if (_pending_queue.empty())
-    {
+    if (_pending_queue.empty()) {
       _mutex_p.unlock();
       break;
     }
@@ -179,22 +159,19 @@ void Dispatcher::dispatch_pending()
     Connection::PrivatePList pending_queue_copy(_pending_queue);
     _mutex_p.unlock();
 
-    size_t copy_elem_num(pending_queue_copy.size());
-
+    const auto copy_elem_num = pending_queue_copy.size();
     dispatch_pending(pending_queue_copy);
 
     //only push_back on list is mandatory!
     _mutex_p.lock();
 
-    Connection::PrivatePList::iterator i, j;
-    i = _pending_queue.begin();
+    auto iter = _pending_queue.begin();
     size_t counter = 0;
-    while (counter < copy_elem_num && i != _pending_queue.end())
-    {
-      j = i;
-      ++j;
-      _pending_queue.erase(i);
-      i = j;
+    while (counter < copy_elem_num && iter != _pending_queue.end()) {
+      auto tmp_iter = iter;
+      ++tmp_iter;
+      _pending_queue.erase(iter);
+      iter = tmp_iter;
       ++counter;
     }
 

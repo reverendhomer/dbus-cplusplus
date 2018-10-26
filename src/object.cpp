@@ -72,8 +72,7 @@ void ObjectAdaptor::Private::unregister_function_stub(DBusConnection *conn, void
 
 DBusHandlerResult ObjectAdaptor::Private::message_function_stub(DBusConnection *, DBusMessage *dmsg, void *data)
 {
-  ObjectAdaptor *o = static_cast<ObjectAdaptor *>(data);
-
+  auto o = static_cast<ObjectAdaptor *>(data);
   if (o)
   {
     Message msg(new Message::Private(dmsg));
@@ -90,39 +89,27 @@ DBusHandlerResult ObjectAdaptor::Private::message_function_stub(DBusConnection *
            : DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }
   else
-  {
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-  }
 }
 
-typedef std::map<Path, ObjectAdaptor *> ObjectAdaptorTable;
-static ObjectAdaptorTable _adaptor_table;
+static std::map<Path, ObjectAdaptor *> _adaptor_table;
 
 ObjectAdaptor *ObjectAdaptor::from_path(const Path &path)
 {
-  ObjectAdaptorTable::iterator ati = _adaptor_table.find(path);
-
+  auto ati = _adaptor_table.find(path);
   if (ati != _adaptor_table.end())
     return ati->second;
 
-  return NULL;
+  return nullptr;
 }
 
 ObjectAdaptorPList ObjectAdaptor::from_path_prefix(const std::string &prefix)
 {
   ObjectAdaptorPList ali;
 
-  ObjectAdaptorTable::iterator ati = _adaptor_table.begin();
-
-  size_t plen = prefix.length();
-
-  while (ati != _adaptor_table.end())
-  {
-    if (!strncmp(ati->second->path().c_str(), prefix.c_str(), plen))
-      ali.push_back(ati->second);
-
-    ++ati;
-  }
+  for (const auto& ati : _adaptor_table)
+    if (ati.second->path() == prefix)
+      ali.push_back(ati.second);
 
   return ali;
 }
@@ -131,19 +118,11 @@ ObjectPathList ObjectAdaptor::child_nodes_from_prefix(const std::string &prefix)
 {
   ObjectPathList ali;
 
-  ObjectAdaptorTable::iterator ati = _adaptor_table.begin();
-
-  size_t plen = prefix.length();
-
-  while (ati != _adaptor_table.end())
-  {
-    if (!strncmp(ati->second->path().c_str(), prefix.c_str(), plen))
-    {
-      std::string p = ati->second->path().substr(plen);
-      p = p.substr(0, p.find('/'));
-      ali.push_back(p);
+  for (const auto& ati : _adaptor_table) {
+    if (ati.second->path() == prefix) {
+      auto p = ati.second->path().substr(prefix.length());
+      ali.push_back(p.substr(0, p.find('/')));
     }
-    ++ati;
   }
 
   ali.sort();
@@ -168,9 +147,7 @@ void ObjectAdaptor::register_obj()
   debug_log("registering local object %s", path().c_str());
 
   if (!dbus_connection_register_object_path(conn()._pvt->conn, path().c_str(), &_vtable, this))
-  {
     throw ErrorNoMemory("unable to register object path");
-  }
 
   _adaptor_table[path()] = this;
 }
@@ -198,56 +175,35 @@ struct ReturnLaterError
 
 bool ObjectAdaptor::handle_message(const Message &msg)
 {
-  switch (msg.type())
-  {
-  case DBUS_MESSAGE_TYPE_METHOD_CALL:
-  {
-    const CallMessage &cmsg = reinterpret_cast<const CallMessage &>(msg);
-    const char *member      = cmsg.member();
-    const char *interface   = cmsg.interface();
-    InterfaceAdaptor *ii    = NULL;
-
-    debug_log(" invoking method %s.%s", interface, member);
-
-    if (interface)
-      ii = find_interface(interface);
-    else
-      ii = NULL;
-
-    if (ii)
-    {
-      try
-      {
-        Message ret = ii->dispatch_method(cmsg);
-        conn().send(ret);
-      }
-      catch (Error &e)
-      {
-        ErrorMessage em(cmsg, e.name(), e.message());
-        conn().send(em);
-      }
-      catch (ReturnLaterError &rle)
-      {
-        _continuations[rle.tag] = new Continuation(conn(), cmsg, rle.tag);
-      }
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-  default:
-  {
+  if (msg.type() != DBUS_MESSAGE_TYPE_METHOD_CALL)
     return false;
+
+  auto& cmsg      = reinterpret_cast<const CallMessage &>(msg);
+  auto  member    = cmsg.member();
+  auto  interface = cmsg.interface();
+
+  debug_log(" invoking method %s.%s", interface, member);
+
+  auto ii = interface ? find_interface(interface) : nullptr;
+  if (ii) {
+    try {
+      conn().send(ii->dispatch_method(cmsg));
+    }
+    catch (Error &e) {
+      conn().send(ErrorMessage(cmsg, e.name(), e.message()));
+    }
+    catch (ReturnLaterError &rle) {
+      _continuations[rle.tag] = std::make_unique<Continuation>(conn(), cmsg, rle.tag);
+    }
+    return true;
   }
-  }
+  else
+    return false;
 }
 
 void ObjectAdaptor::return_later(const Tag *tag)
 {
-  ReturnLaterError rle = { tag };
-  throw rle;
+  throw ReturnLaterError{tag};
 }
 
 void ObjectAdaptor::return_now(Continuation *ret)
@@ -296,35 +252,30 @@ void ObjectProxy::register_obj()
 
   conn().add_filter(_filtered);
 
-  InterfaceProxyTable::const_iterator ii = _interfaces.begin();
-  while (ii != _interfaces.end())
-  {
-    std::string im = "type='signal',interface='" + ii->first + "',path='" + path() + "'";
-    conn().add_match(im.c_str());
-    ++ii;
-  }
+  for (const auto& ii : _interfaces)
+    conn().add_match(
+      ("type='signal',interface='" + ii.first
+       + "',path='" + path() + "'").c_str());
 }
 
 void ObjectProxy::unregister_obj(bool throw_on_error)
 {
   debug_log("unregistering remote object %s", path().c_str());
 
-  InterfaceProxyTable::const_iterator ii = _interfaces.begin();
-  while (ii != _interfaces.end())
-  {
-    std::string im = "type='signal',interface='" + ii->first + "',path='" + path() + "'";
-    conn().remove_match(im.c_str(), throw_on_error);
-    ++ii;
-  }
+  for (const auto& ii : _interfaces)
+    conn().remove_match(
+      ("type='signal',interface='" + ii.first
+       + "',path='" + path() + "'").c_str(),
+      throw_on_error);
   conn().remove_filter(_filtered);
 }
 
 Message ObjectProxy::_invoke_method(CallMessage &call)
 {
-  if (call.path() == NULL)
+  if (call.path() == nullptr)
     call.path(path().c_str());
 
-  if (call.destination() == NULL)
+  if (call.destination() == nullptr)
     call.destination(service().c_str());
 
   return conn().send_blocking(call, get_timeout());
@@ -332,10 +283,10 @@ Message ObjectProxy::_invoke_method(CallMessage &call)
 
 bool ObjectProxy::_invoke_method_noreply(CallMessage &call)
 {
-  if (call.path() == NULL)
+  if (call.path() == nullptr)
     call.path(path().c_str());
 
-  if (call.destination() == NULL)
+  if (call.destination() == nullptr)
     call.destination(service().c_str());
 
   return conn().send(call);
@@ -343,33 +294,18 @@ bool ObjectProxy::_invoke_method_noreply(CallMessage &call)
 
 bool ObjectProxy::handle_message(const Message &msg)
 {
-  switch (msg.type())
-  {
-  case DBUS_MESSAGE_TYPE_SIGNAL:
-  {
-    const SignalMessage &smsg = reinterpret_cast<const SignalMessage &>(msg);
-    const char *interface	= smsg.interface();
-    const char *member	= smsg.member();
-    const char *objpath	= smsg.path();
-
-    if (objpath != path()) return false;
-
-    debug_log("filtered signal %s(in %s) from %s to object %s",
-              member, interface, msg.sender(), objpath);
-
-    InterfaceProxy *ii = find_interface(interface);
-    if (ii)
-    {
-      return ii->dispatch_signal(smsg);
-    }
-    else
-    {
-      return false;
-    }
-  }
-  default:
-  {
+  if (msg.type() != DBUS_MESSAGE_TYPE_SIGNAL)
     return false;
-  }
-  }
+  auto& smsg    = reinterpret_cast<const SignalMessage &>(msg);
+  auto  objpath = smsg.path();
+
+  if (objpath != path())
+    return false;
+
+  auto interface = smsg.interface();
+  debug_log("filtered signal %s(in %s) from %s to object %s",
+            smsg.member(), interface, msg.sender(), objpath);
+
+  auto ii = find_interface(interface);
+  return ii ? ii->dispatch_signal(smsg) : false;
 }

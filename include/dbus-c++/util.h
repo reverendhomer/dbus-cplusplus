@@ -63,9 +63,7 @@ public:
   R operator()(P param) const
   {
     if (!empty())
-    {
       return _cb->call(param);
-    }
 
     // TODO: think about return type in this case
     // this assert should help me to find the use case where it's needed...
@@ -75,9 +73,7 @@ public:
   R call(P param) const
   {
     if (!empty())
-    {
       return _cb->call(param);
-    }
 
     // TODO: think about return type in this case
     // this assert should help me to find the use case where it's needed...

@@ -82,8 +82,7 @@ DefaultMainLoop::~DefaultMainLoop()
   _mutex_w.lock();
 
   DefaultWatches::iterator wi = _watches.begin();
-  while (wi != _watches.end())
-  {
+  while (wi != _watches.end()) {
     DefaultWatches::iterator wmp = wi;
     ++wmp;
     _mutex_w.unlock();
@@ -94,7 +93,6 @@ DefaultMainLoop::~DefaultMainLoop()
   _mutex_w.unlock();
 
   _mutex_t.lock();
-
   DefaultTimeouts::iterator ti = _timeouts.begin();
   while (ti != _timeouts.end())
   {
@@ -111,22 +109,16 @@ DefaultMainLoop::~DefaultMainLoop()
 void DefaultMainLoop::dispatch()
 {
   _mutex_w.lock();
-
-  int nfd = _watches.size();
+  auto nfd = _watches.size();
 
   if (_fdunlock)
-  {
-    nfd = nfd + 2;
-  }
+    nfd += 2;
 
   pollfd fds[nfd];
 
-  DefaultWatches::iterator wi = _watches.begin();
-
-  for (nfd = 0; wi != _watches.end(); ++wi)
-  {
-    if ((*wi)->enabled())
-    {
+  auto wi = _watches.begin();
+  for (nfd = 0; wi != _watches.end(); ++wi) {
+    if ((*wi)->enabled()) {
       fds[nfd].fd = (*wi)->descriptor();
       fds[nfd].events = (*wi)->flags();
       fds[nfd].revents = 0;
@@ -135,8 +127,7 @@ void DefaultMainLoop::dispatch()
     }
   }
 
-  if (_fdunlock)
-  {
+  if (_fdunlock) {
     fds[nfd].fd = _fdunlock[0];
     fds[nfd].events = POLLIN | POLLOUT | POLLPRI ;
     fds[nfd].revents = 0;
@@ -146,7 +137,6 @@ void DefaultMainLoop::dispatch()
     fds[nfd].events = POLLIN | POLLOUT | POLLPRI ;
     fds[nfd].revents = 0;
   }
-
   _mutex_w.unlock();
 
   int wait_min = 10000;
