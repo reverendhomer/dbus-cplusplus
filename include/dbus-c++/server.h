@@ -26,11 +26,11 @@
 #define __DBUSXX_SERVER_H
 
 #include <list>
+#include <memory>
 
 #include "api.h"
 #include "error.h"
 #include "connection.h"
-#include "util.h"
 #include "dispatcher.h"
 
 namespace DBus
@@ -67,7 +67,7 @@ protected:
 
 private:
 
-  RefPtrI<Private> _pvt;
+  std::shared_ptr<Private> _pvt;
 };
 
 } /* namespace DBus */

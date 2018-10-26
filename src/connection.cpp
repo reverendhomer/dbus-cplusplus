@@ -212,8 +212,8 @@ Connection::Connection(const char *address, bool priv)
 
   if (e) throw Error(e);
 
-  _pvt = new Private(conn);
 
+  _pvt = std::make_shared<Private>(conn);
   setup(default_dispatcher);
 
   debug_log("connected to %s", address);

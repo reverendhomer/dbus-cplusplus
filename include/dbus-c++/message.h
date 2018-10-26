@@ -27,6 +27,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 
 #include "api.h"
 #include "util.h"
@@ -205,7 +206,7 @@ protected:
 
 protected:
 
-  RefPtrI<Private> _pvt;
+  std::shared_ptr<Private> _pvt;
 
   /*	classes who need to read `_pvt` directly
   */

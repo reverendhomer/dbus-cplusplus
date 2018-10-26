@@ -28,6 +28,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 #include <cassert>
 
 #include "api.h"
@@ -35,176 +36,6 @@
 
 namespace DBus
 {
-
-/*
- *   Very simple reference counting
- */
-
-class DXXAPI RefCnt
-{
-public:
-
-  RefCnt()
-  {
-    __ref = new int;
-    (*__ref) = 1;
-  }
-
-  RefCnt(const RefCnt &rc)
-  {
-    __ref = rc.__ref;
-    ref();
-  }
-
-  virtual ~RefCnt()
-  {
-    unref();
-  }
-
-  RefCnt &operator = (const RefCnt &ref)
-  {
-    ref.ref();
-    unref();
-    __ref = ref.__ref;
-    return *this;
-  }
-
-  bool noref() const
-  {
-    return (*__ref) == 0;
-  }
-
-  bool one() const
-  {
-    return (*__ref) == 1;
-  }
-
-private:
-
-  DXXAPILOCAL void ref() const
-  {
-    ++ (*__ref);
-  }
-  DXXAPILOCAL void unref() const
-  {
-    -- (*__ref);
-
-    if ((*__ref) < 0)
-    {
-      debug_log("%p: refcount dropped below zero!", __ref);
-    }
-
-    if (noref())
-    {
-      delete __ref;
-    }
-  }
-
-private:
-
-  int *__ref;
-};
-
-/*
- *   Reference counting pointers (emulate boost::shared_ptr)
- */
-
-template <class T>
-class RefPtrI		// RefPtr to incomplete type
-{
-public:
-
-  RefPtrI(T *ptr = 0);
-
-  ~RefPtrI();
-
-  RefPtrI &operator = (const RefPtrI &ref)
-  {
-    if (this != &ref)
-    {
-      if (__cnt.one()) delete __ptr;
-
-      __ptr = ref.__ptr;
-      __cnt = ref.__cnt;
-    }
-    return *this;
-  }
-
-  T &operator *() const
-  {
-    return *__ptr;
-  }
-
-  T *operator ->() const
-  {
-    if (__cnt.noref()) return 0;
-
-    return __ptr;
-  }
-
-  T *get() const
-  {
-    if (__cnt.noref()) return 0;
-
-    return __ptr;
-  }
-
-private:
-
-  T *__ptr;
-  RefCnt __cnt;
-};
-
-template <class T>
-class RefPtr
-{
-public:
-
-  RefPtr(T *ptr = 0)
-    : __ptr(ptr)
-  {}
-
-  ~RefPtr()
-  {
-    if (__cnt.one()) delete __ptr;
-  }
-
-  RefPtr &operator = (const RefPtr &ref)
-  {
-    if (this != &ref)
-    {
-      if (__cnt.one()) delete __ptr;
-
-      __ptr = ref.__ptr;
-      __cnt = ref.__cnt;
-    }
-    return *this;
-  }
-
-  T &operator *() const
-  {
-    return *__ptr;
-  }
-
-  T *operator ->() const
-  {
-    if (__cnt.noref()) return 0;
-
-    return __ptr;
-  }
-
-  T *get() const
-  {
-    if (__cnt.noref()) return 0;
-
-    return __ptr;
-  }
-
-private:
-
-  T *__ptr;
-  RefCnt __cnt;
-};
 
 /*
  *   Typed callback template
@@ -228,8 +59,7 @@ public:
 
   Slot &operator = (Callback_Base<R, P>* s)
   {
-    _cb = s;
-
+    _cb.reset(s);
     return *this;
   }
 
@@ -264,7 +94,7 @@ public:
 
 private:
 
-  RefPtr< Callback_Base<R, P> > _cb;
+  std::shared_ptr< Callback_Base<R, P> > _cb;
 };
 
 template <class C, class R, class P>

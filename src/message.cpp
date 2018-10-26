@@ -632,7 +632,7 @@ const char *CallMessage::signature() const
 
 ReturnMessage::ReturnMessage(const CallMessage &callee)
 {
-  _pvt = new Private(dbus_message_new_method_return(callee._pvt->msg));
+  _pvt = std::make_shared<Private>(dbus_message_new_method_return(callee._pvt->msg));
 }
 
 const char *ReturnMessage::signature() const

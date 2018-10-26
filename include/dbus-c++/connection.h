@@ -26,10 +26,10 @@
 #define __DBUSXX_CONNECTION_H
 
 #include <list>
+#include <memory>
 
 #include "api.h"
 #include "types.h"
-#include "util.h"
 #include "message.h"
 #include "pendingcall.h"
 
@@ -458,7 +458,7 @@ private:
 
 private:
 
-  RefPtrI<Private> _pvt;
+  std::shared_ptr<Private> _pvt;
   int _timeout;
 
   friend class ObjectAdaptor; // needed in order to register object paths for a connection

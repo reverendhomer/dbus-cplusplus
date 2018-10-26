@@ -26,9 +26,9 @@
 #define __DBUSXX_ERROR_H
 
 #include "api.h"
-#include "util.h"
 
 #include <exception>
+#include <memory>
 
 namespace DBus
 {
@@ -68,7 +68,7 @@ public:
 
 private:
 
-  RefPtrI<InternalError> _int;
+  std::shared_ptr<InternalError> _int;
 };
 
 struct DXXAPI ErrorFailed : public Error
