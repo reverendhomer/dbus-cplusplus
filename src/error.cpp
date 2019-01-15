@@ -42,8 +42,8 @@ Error::Error()
   : _int(new InternalError)
 {}
 
-Error::Error(InternalError &i)
-  : _int(new InternalError(i))
+Error::Error(InternalError& i)
+  : _int(new InternalError(std::move(i)))
 {}
 
 Error::Error(const char *name, const char *message)

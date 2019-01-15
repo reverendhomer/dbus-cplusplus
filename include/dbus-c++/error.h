@@ -42,7 +42,7 @@ public:
 
   Error();
 
-  Error(InternalError &);
+  Error(InternalError&);
 
   Error(const char *name, const char *message);
 

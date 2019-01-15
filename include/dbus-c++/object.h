@@ -134,9 +134,9 @@ protected:
 
     friend class ObjectAdaptor;
 
-  public:
     Continuation(Connection &conn, const CallMessage &call, const Tag *tag);
 
+  public:
     inline MessageIter &writer() noexcept
     {
       return _writer;

@@ -25,6 +25,8 @@
 #include <config.h>
 #endif
 
+#include <algorithm>
+
 #include <dbus-c++/dispatcher.h>
 
 #include <dbus/dbus.h>
@@ -33,7 +35,7 @@
 #include "server_p.h"
 #include "connection_p.h"
 
-DBus::Dispatcher *DBus::default_dispatcher = NULL;
+DBus::Dispatcher *DBus::default_dispatcher = nullptr;
 
 using namespace DBus;
 
@@ -140,10 +142,9 @@ void Dispatcher::queue_connection(Connection::Private *cp)
 bool Dispatcher::has_something_to_dispatch()
 {
   std::lock_guard<std::mutex> lck(_mutex_p);
-  for (const auto& pq : _pending_queue)
-    if (pq->has_something_to_dispatch())
-      return true;
-  return false;
+  return std::any_of(
+      _pending_queue.cbegin(), _pending_queue.cend(),
+      [](const auto& pq) { return pq->has_something_to_dispatch(); });
 }
 
 

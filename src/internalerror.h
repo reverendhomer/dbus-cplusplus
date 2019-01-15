@@ -51,11 +51,13 @@ struct DXXAPI InternalError
     dbus_move_error(e, &error);
   }
 
-  InternalError(const InternalError &ie)
+  InternalError(InternalError&& ie)
   {
     dbus_error_init(&error);
-    dbus_move_error(const_cast<DBusError *>(&(ie.error)), &error);
+    dbus_move_error(&ie.error, &error);
   }
+
+  InternalError& operator=(InternalError&& ie) = delete;
 
   ~InternalError()
   {

@@ -193,7 +193,8 @@ bool ObjectAdaptor::handle_message(const Message &msg)
       conn().send(ErrorMessage(cmsg, e.name(), e.message()));
     }
     catch (ReturnLaterError &rle) {
-      _continuations[rle.tag] = std::make_unique<Continuation>(conn(), cmsg, rle.tag);
+      _continuations[rle.tag] = std::unique_ptr<Continuation>(
+          new Continuation(conn(), cmsg, rle.tag));
     }
     return true;
   }

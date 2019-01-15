@@ -82,7 +82,7 @@ public:
 
   inline bool empty() const noexcept
   {
-    return _cb.get() == nullptr;
+    return (bool)_cb;
   }
 
 private:

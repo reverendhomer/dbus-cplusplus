@@ -388,8 +388,7 @@ Message::~Message()
 
 Message &Message::operator = (const Message &m)
 {
-  if (&m != this)
-  {
+  if (&m != this) {
     dbus_message_unref(_pvt->msg);
     _pvt = m._pvt;
     dbus_message_ref(_pvt->msg);

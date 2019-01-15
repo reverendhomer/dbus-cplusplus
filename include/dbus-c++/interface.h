@@ -92,8 +92,7 @@ protected:
 
   InterfaceProxy *find_interface(const std::string &name);
 
-  virtual ~ProxyBase()
-  {}
+  virtual ~ProxyBase() = default;
 
   virtual Message _invoke_method(CallMessage &) = 0;
 
@@ -104,26 +103,19 @@ protected:
 
 class DXXAPI Interface
 {
+private:
+  std::string _name;
+
 public:
 
   Interface(const std::string &name);
+  virtual ~Interface() = default;
 
-  virtual ~Interface();
-
-  inline const std::string &name() const;
-
-private:
-
-  std::string 	_name;
+  inline const std::string &name() const noexcept
+  {
+    return _name;
+  }
 };
-
-/*
-*/
-
-const std::string &Interface::name() const
-{
-  return _name;
-}
 
 /*
 */
