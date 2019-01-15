@@ -61,7 +61,7 @@ private:
 
 class Node;
 
-class Nodes : public std::vector<Node *>
+class Nodes : public std::vector<const Node *>
 {
 public:
 
@@ -86,7 +86,7 @@ public:
 
   Node(const char *n, const char **a = NULL);
 
-  Nodes operator[](const std::string &key);
+  Nodes operator[](const std::string &key) const;
 
   std::string get(const std::string &attribute) const noexcept;
 

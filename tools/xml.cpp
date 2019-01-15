@@ -44,22 +44,16 @@ using namespace DBus;
 using namespace DBus::Xml;
 
 Error::Error(const char *error, int line, int column)
+  : _error("line" + std::to_string(line) + ", column" + std::to_string(column) + ": " + error)
 {
-  std::ostringstream estream;
-
-  estream << "line " << line << ", column " << column << ": " << error;
-
-  _error = estream.str();
 }
 
 Node::Node(const char *n, const char **a)
   : name(n)
 {
   if (a)
-    for (int i = 0; a[i]; i += 2)
-    {
+    for (int i = 0; a[i]; i += 2) {
       _attrs[a[i]] = a[i + 1];
-
       //debug_log("xml:\t%s = %s", a[i], a[i+1]);
     }
 }
@@ -85,16 +79,16 @@ Nodes Nodes::select(const std::string &attr, const std::string &value) const
   return result;
 }
 
-Nodes Node::operator[](const std::string &key)
+Nodes Node::operator[](const std::string &key) const
 {
   Nodes result;
 
   if (key.empty())
       return result;
 
-  for (Children::iterator i = children.begin(); i != children.end(); ++i)
-    if (i->name == key)
-      result.push_back(&(*i));
+  for (const auto& i : children)
+    if (i.name == key)
+      result.push_back(&i);
 
   return result;
 }
@@ -130,26 +124,26 @@ void Node::_raw_xml(std::string &xml, int &depth) const
   for (const auto& attr : _attrs)
     xml.append(" " + attr.first + "=\"" + attr.second + "\"");
 
-  if (cdata.empty() && children.empty())
+  if (cdata.empty() && children.empty()) {
     xml.append("/>\n");
-  else {
-    xml.append(">");
-
-    if (!cdata.empty())
-      xml.append(cdata);
-
-    if (!children.empty()) {
-      xml.append("\n");
-      depth++;
-
-      for (const auto& child : children)
-        child._raw_xml(xml, depth);
-
-      depth--;
-      xml.append(depth * 2, ' ');
-    }
-    xml.append("</" + name + ">\n");
+    return;
   }
+  xml.append(">");
+
+  if (!cdata.empty())
+    xml.append(cdata);
+
+  if (!children.empty()) {
+    xml.append("\n");
+    depth++;
+
+    for (const auto& child : children)
+      child._raw_xml(xml, depth);
+
+    depth--;
+    xml.append(depth * 2, ' ');
+  }
+  xml.append("</" + name + ">\n");
 }
 
 Document::Document()
@@ -247,10 +241,10 @@ void Document::Expat::start_element_handler(void *data,
   if (!doc->root)
     doc->root.reset(new Node(name, atts));
   else {
-    Node::Children *cld = &(doc->root->children);
+    auto cld = &doc->root->children;
 
     for (int i = 1; i < doc->_depth; ++i)
-      cld = &(cld->back().children);
+      cld = &cld->back().children;
     cld->push_back(Node(name, atts));
 
     //std::cerr << doc->to_xml() << std::endl;
@@ -261,8 +255,7 @@ void Document::Expat::start_element_handler(void *data,
 void Document::Expat::character_data_handler(void *data, const XML_Char *chars, int len)
 {
   auto doc = static_cast<Document*>(data);
-
-  Node *nod = doc->root.get();
+  auto nod = doc->root.get();
 
   for (int i = 1; i < doc->_depth; ++i)
     nod = &nod->children.back();
