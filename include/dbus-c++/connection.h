@@ -449,7 +449,7 @@ public:
 
   void set_timeout(int timeout);
 
-  int get_timeout();
+  int get_timeout() const;
 
 private:
 

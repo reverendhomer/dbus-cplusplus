@@ -54,7 +54,8 @@ Connection::Private::Private(DBusBusType type)
 
   conn = dbus_bus_get_private(type, e);
 
-  if (e) throw Error(e);
+  if (e)
+    throw Error(e);
 
   init();
 }
@@ -370,9 +371,7 @@ PendingCall Connection::send_async(Message &msg, int timeout)
   DBusPendingCall *pending = nullptr;
 
   if (!dbus_connection_send_with_reply(_pvt->conn, msg._pvt->msg, &pending, timeout))
-  {
     throw ErrorNoMemory("Unable to start asynchronous call");
-  }
   return PendingCall(new PendingCall::Private(pending));
 }
 
@@ -427,10 +426,11 @@ const std::vector<std::string>& Connection::names()
 bool Connection::start_service(const char *name, unsigned long flags)
 {
   InternalError e;
+  const bool b = dbus_bus_start_service_by_name(
+    _pvt->conn, name, flags, nullptr, e);
 
-  bool b = dbus_bus_start_service_by_name(_pvt->conn, name, flags, NULL, e);
-
-  if (e) throw Error(e);
+  if (e)
+    throw Error(e);
 
   return b;
 }
@@ -440,7 +440,7 @@ void Connection::set_timeout(int timeout)
   _timeout = timeout;
 }
 
-int Connection::get_timeout()
+int Connection::get_timeout() const
 {
   return _timeout;
 }
