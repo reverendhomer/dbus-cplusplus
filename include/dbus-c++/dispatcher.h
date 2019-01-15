@@ -29,6 +29,8 @@
 #include "connection.h"
 #include "eventloop.h"
 
+#include <mutex>
+
 namespace DBus
 {
 
@@ -101,7 +103,7 @@ public:
    *
    * @return The file descriptor.
    */
-  int descriptor() const;
+  int descriptor() const noexcept;
 
   /*!
    * \brief Gets flags from DBusWatchFlags indicating what conditions should be
@@ -113,9 +115,9 @@ public:
    *
    * @return The conditions to watch.
    */
-  int flags() const;
+  int flags() const noexcept;
 
-  bool enabled() const;
+  bool enabled() const noexcept;
 
   /*!
    * \brief Called to notify the D-Bus library when a previously-added watch
@@ -135,7 +137,7 @@ public:
    * @param flags The poll condition using DBusWatchFlags values.
    * @return false If there wasn't enough memory.
    */
-  bool handle(int flags);
+  bool handle(int flags) noexcept;
 
   virtual void toggle() = 0;
 
@@ -177,155 +179,15 @@ public:
 private:
   void dispatch_pending(Connection::PrivatePList &pending_queue);
 
-  DefaultMutex _mutex_p;
-  DefaultMutex _mutex_p_copy;
+  std::mutex _mutex_p;
+  std::mutex _mutex_p_copy;
 
   Connection::PrivatePList _pending_queue;
 };
 
 extern DXXAPI Dispatcher *default_dispatcher;
 
-/* classes for multithreading support
-*/
-
-class DXXAPI Mutex
-{
-public:
-
-  virtual ~Mutex() {}
-
-  virtual void lock() = 0;
-
-  virtual void unlock() = 0;
-
-  struct Internal;
-
-protected:
-
-  Internal *_int;
-};
-
-class DXXAPI CondVar
-{
-public:
-
-  virtual ~CondVar() {}
-
-  virtual void wait(Mutex *) = 0;
-
-  virtual bool wait_timeout(Mutex *, int timeout) = 0;
-
-  virtual void wake_one() = 0;
-
-  virtual void wake_all() = 0;
-
-  struct Internal;
-
-protected:
-
-  Internal *_int;
-};
-
-typedef Mutex *(*MutexNewFn)();
-typedef void (*MutexUnlockFn)(Mutex *mx);
-
-#ifndef DBUS_HAS_RECURSIVE_MUTEX
-typedef bool (*MutexFreeFn)(Mutex *mx);
-typedef bool (*MutexLockFn)(Mutex *mx);
-#else
-typedef void (*MutexFreeFn)(Mutex *mx);
-typedef void (*MutexLockFn)(Mutex *mx);
-#endif//DBUS_HAS_RECURSIVE_MUTEX
-
-typedef CondVar *(*CondVarNewFn)();
-typedef void (*CondVarFreeFn)(CondVar *cv);
-typedef void (*CondVarWaitFn)(CondVar *cv, Mutex *mx);
-typedef bool (*CondVarWaitTimeoutFn)(CondVar *cv, Mutex *mx, int timeout);
-typedef void (*CondVarWakeOneFn)(CondVar *cv);
-typedef void (*CondVarWakeAllFn)(CondVar *cv);
-
 void DXXAPI _init_threading();
-
-void DXXAPI _init_threading(
-  MutexNewFn, MutexFreeFn, MutexLockFn, MutexUnlockFn,
-  CondVarNewFn, CondVarFreeFn, CondVarWaitFn, CondVarWaitTimeoutFn, CondVarWakeOneFn, CondVarWakeAllFn
-);
-
-template<class Mx, class Cv>
-struct Threading
-{
-  static void init()
-  {
-    _init_threading(
-      mutex_new, mutex_free, mutex_lock, mutex_unlock,
-      condvar_new, condvar_free, condvar_wait, condvar_wait_timeout, condvar_wake_one, condvar_wake_all
-    );
-  }
-
-  static Mutex *mutex_new()
-  {
-    return new Mx;
-  }
-
-#ifndef DBUS_HAS_RECURSIVE_MUTEX
-  static bool mutex_free(Mutex *mx)
-  {
-    delete mx;
-    return true;
-  }
-
-  static bool mutex_lock(Mutex *mx)
-  {
-    mx->lock();
-    return true;
-  }
-#else
-  static void mutex_free(Mutex *mx)
-  {
-    delete mx;
-  }
-
-  static void mutex_lock(Mutex *mx)
-  {
-    mx->lock();
-  }
-#endif
-
-  static void mutex_unlock(Mutex *mx)
-  {
-    mx->unlock();
-  }
-
-  static CondVar *condvar_new()
-  {
-    return new Cv;
-  }
-
-  static void condvar_free(CondVar *cv)
-  {
-    delete cv;
-  }
-
-  static void condvar_wait(CondVar *cv, Mutex *mx)
-  {
-    cv->wait(mx);
-  }
-
-  static bool condvar_wait_timeout(CondVar *cv, Mutex *mx, int timeout)
-  {
-    return cv->wait_timeout(mx, timeout);
-  }
-
-  static void condvar_wake_one(CondVar *cv)
-  {
-    cv->wake_one();
-  }
-
-  static void condvar_wake_all(CondVar *cv)
-  {
-    cv->wake_all();
-  }
-};
 
 } /* namespace DBus */
 

@@ -27,6 +27,7 @@
 
 #include <pthread.h>
 #include <list>
+#include <mutex>
 
 #include "api.h"
 #include "util.h"
@@ -51,38 +52,38 @@ public:
 
   virtual ~DefaultTimeout();
 
-  bool enabled()
+  inline bool enabled() const noexcept
   {
     return _enabled;
   }
-  void enabled(bool e)
+  inline void enabled(bool e) noexcept
   {
     _enabled = e;
   }
 
-  int interval()
+  inline int interval() const noexcept
   {
     return _interval;
   }
-  void interval(int i)
+  inline void interval(int i) noexcept
   {
     _interval = i;
   }
 
-  bool repeat()
+  inline bool repeat() const noexcept
   {
     return _repeat;
   }
-  void repeat(bool r)
+  inline void repeat(bool r) noexcept
   {
     _repeat = r;
   }
 
-  void *data()
+  inline void *data() noexcept
   {
     return _data;
   }
-  void data(void *d)
+  inline void data(void *d) noexcept
   {
     _data = d;
   }
@@ -105,7 +106,7 @@ private:
   friend class DefaultMainLoop;
 };
 
-typedef std::list< DefaultTimeout *> DefaultTimeouts;
+using DefaultTimeouts = std::list<DefaultTimeout *>;
 
 class DXXAPI DefaultWatch
 {
@@ -115,39 +116,39 @@ public:
 
   virtual ~DefaultWatch();
 
-  bool enabled()
+  inline bool enabled() const noexcept
   {
     return _enabled;
   }
-  void enabled(bool e)
+  inline void enabled(bool e) noexcept
   {
     _enabled = e;
   }
 
-  int descriptor()
+  inline int descriptor() const noexcept
   {
     return _fd;
   }
 
-  int flags()
+  inline int flags() const noexcept
   {
     return _flags;
   }
-  void flags(int f)
+  inline void flags(int f) noexcept
   {
     _flags = f;
   }
 
-  int state()
+  inline int state() const noexcept
   {
     return _state;
   }
 
-  void *data()
+  inline void *data() noexcept
   {
     return _data;
   }
-  void data(void *d)
+  inline void data(void *d) noexcept
   {
     _data = d;
   }
@@ -169,33 +170,7 @@ private:
   friend class DefaultMainLoop;
 };
 
-typedef std::list< DefaultWatch *> DefaultWatches;
-
-class DXXAPI DefaultMutex
-{
-public:
-
-  /*!
-   * Constructor for non recursive Mutex
-   */
-  DefaultMutex();
-
-  /*!
-   * Constructor
-   * \param recursive Set if Mutex should be recursive or not.
-   */
-  DefaultMutex(bool recursive);
-
-  ~DefaultMutex();
-
-  void lock();
-
-  void unlock();
-
-private:
-
-  pthread_mutex_t _mutex;
-};
+using DefaultWatches = std::list<DefaultWatch *>;
 
 class DXXAPI DefaultMainLoop
 {
@@ -210,10 +185,10 @@ public:
   int _fdunlock[2];
 private:
 
-  DefaultMutex _mutex_t;
+  std::mutex _mutex_t;
   DefaultTimeouts _timeouts;
 
-  DefaultMutex _mutex_w;
+  std::recursive_mutex _mutex_w;
   DefaultWatches _watches;
 
   friend class DefaultTimeout;

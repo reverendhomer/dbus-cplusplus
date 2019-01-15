@@ -54,7 +54,8 @@ Connection::Private::Private(DBusBusType type)
 
   conn = dbus_bus_get_private(type, e);
 
-  if (e) throw Error(e);
+  if (e)
+    throw Error(e);
 
   init();
 }
@@ -65,15 +66,11 @@ Connection::Private::~Private()
 
   detach_server();
 
-  if (dbus_connection_get_is_connected(conn))
-  {
-    std::vector<std::string>::iterator i = names.begin();
-
-    while (i != names.end())
-    {
-      debug_log("%s: releasing bus name %s", dbus_bus_get_unique_name(conn), i->c_str());
-      dbus_bus_release_name(conn, i->c_str(), NULL);
-      ++i;
+  if (dbus_connection_get_is_connected(conn)) {
+    for (const auto& name : names) {
+      debug_log("%s: releasing bus name %s",
+                dbus_bus_get_unique_name(conn), name.c_str());
+      dbus_bus_release_name(conn, name.c_str(), nullptr);
     }
     dbus_connection_close(conn);
   }
@@ -120,12 +117,9 @@ bool Connection::Private::do_dispatch()
 {
   debug_log("dispatching on %p", conn);
 
-  if (!dbus_connection_get_is_connected(conn))
-  {
+  if (!dbus_connection_get_is_connected(conn)) {
     debug_log("connection terminated");
-
     detach_server();
-
     return true;
   }
 
@@ -134,8 +128,7 @@ bool Connection::Private::do_dispatch()
 
 void Connection::Private::dispatch_status_stub(DBusConnection *dc, DBusDispatchStatus status, void *data)
 {
-  Private *p = static_cast<Private *>(data);
-
+  auto p = static_cast<Private *>(data);
   switch (status)
   {
   case DBUS_DISPATCH_DATA_REMAINS:
@@ -155,9 +148,8 @@ void Connection::Private::dispatch_status_stub(DBusConnection *dc, DBusDispatchS
 
 DBusHandlerResult Connection::Private::message_filter_stub(DBusConnection *conn, DBusMessage *dmsg, void *data)
 {
-  MessageSlot *slot = static_cast<MessageSlot *>(data);
-
-  Message msg = Message(new Message::Private(dmsg));
+  auto slot = static_cast<MessageSlot *>(data);
+  auto msg = Message(new Message::Private(dmsg));
 
   return slot && !slot->empty() && slot->call(msg)
          ? DBUS_HANDLER_RESULT_HANDLED
@@ -166,11 +158,9 @@ DBusHandlerResult Connection::Private::message_filter_stub(DBusConnection *conn,
 
 bool Connection::Private::disconn_filter_function(const Message &msg)
 {
-  if (msg.is_signal(DBUS_INTERFACE_LOCAL, "Disconnected"))
-  {
+  if (msg.is_signal(DBUS_INTERFACE_LOCAL, "Disconnected")) {
     debug_log("%p disconnected by local bus", conn);
     dbus_connection_close(conn);
-
     return true;
   }
   return false;
@@ -206,16 +196,15 @@ Connection::Connection(const char *address, bool priv)
   : _timeout(-1)
 {
   InternalError e;
-  DBusConnection *conn = priv
-                         ? dbus_connection_open_private(address, e)
-                         : dbus_connection_open(address, e);
+  auto conn = priv
+              ? dbus_connection_open_private(address, e)
+              : dbus_connection_open(address, e);
 
-  if (e) throw Error(e);
+  if (e)
+    throw Error(e);
 
-  _pvt = new Private(conn);
-
+  _pvt = std::make_shared<Private>(conn);
   setup(default_dispatcher);
-
   debug_log("connected to %s", address);
 }
 
@@ -240,9 +229,11 @@ Dispatcher *Connection::setup(Dispatcher *dispatcher)
 {
   debug_log("registering stubs for connection %p", _pvt->conn);
 
-  if (!dispatcher) dispatcher = default_dispatcher;
+  if (!dispatcher)
+    dispatcher = default_dispatcher;
 
-  if (!dispatcher) throw ErrorFailed("no default dispatcher set for new connection");
+  if (!dispatcher)
+    throw ErrorFailed("no default dispatcher set for new connection");
 
   Dispatcher *prev = _pvt->dispatcher;
 
@@ -282,7 +273,8 @@ bool Connection::register_bus()
 
   bool r = dbus_bus_register(_pvt->conn, e);
 
-  if (e) throw(e);
+  if (e)
+    throw e;
 
   return r;
 }
@@ -326,11 +318,11 @@ void Connection::add_match(const char *rule)
 
   debug_log("%s: added match rule %s", unique_name(), rule);
 
-  if (e) throw Error(e);
+  if (e)
+    throw Error(e);
 }
 
-void Connection::remove_match(const char	*rule,
-                              bool		throw_on_error)
+void Connection::remove_match(const char *rule, bool throw_on_error)
 {
   InternalError e;
 
@@ -338,14 +330,11 @@ void Connection::remove_match(const char	*rule,
 
   debug_log("%s: removed match rule %s", unique_name(), rule);
 
-  if (e)
-  {
+  if (e) {
     if (throw_on_error)
       throw Error(e);
     else
-      debug_log("DBus::Connection::remove_match: %s (%s).",
-                static_cast<DBusError *>(e)->message,
-                static_cast<DBusError *>(e)->name);
+      debug_log("DBus::Connection::remove_match: %s (%s).", e->message, e->name);
   }
 }
 
@@ -368,37 +357,26 @@ bool Connection::send(const Message &msg, unsigned int *serial)
 
 Message Connection::send_blocking(Message &msg, int timeout)
 {
-  DBusMessage *reply;
   InternalError e;
-
-  if (this->_timeout != -1)
-  {
-    reply = dbus_connection_send_with_reply_and_block(_pvt->conn, msg._pvt->msg, this->_timeout, e);
-  }
-  else
-  {
-    reply = dbus_connection_send_with_reply_and_block(_pvt->conn, msg._pvt->msg, timeout, e);
-  }
-
-  if (e) throw Error(e);
-
+  auto reply = dbus_connection_send_with_reply_and_block(
+      _pvt->conn, msg._pvt->msg,
+      this->_timeout != -1 ? this->_timeout : timeout, e);
+  if (e)
+    throw Error(e);
   return Message(new Message::Private(reply), false);
 }
 
 PendingCall Connection::send_async(Message &msg, int timeout)
 {
-  DBusPendingCall *pending;
+  DBusPendingCall *pending = nullptr;
 
   if (!dbus_connection_send_with_reply(_pvt->conn, msg._pvt->msg, &pending, timeout))
-  {
     throw ErrorNoMemory("Unable to start asynchronous call");
-  }
   return PendingCall(new PendingCall::Private(pending));
 }
 
 void Connection::request_name(const char *name, int flags)
 {
-  InternalError e;
 
   debug_log("%s: registering bus name %s", unique_name(), name);
 
@@ -407,19 +385,17 @@ void Connection::request_name(const char *name, int flags)
    * Think about giving back the 'ret' value. Some people on the list
    * requested about this...
    */
+  InternalError e;
   int ret = dbus_bus_request_name(_pvt->conn, name, flags, e);
 
-  if (ret == -1)
-  {
-    if (e) throw Error(e);
-  }
+  if (ret == -1 && e)
+    throw Error(e);
 
 //	this->remove_match("destination");
 
-  if (name)
-  {
+  if (name) {
     _pvt->names.push_back(name);
-    std::string match = "destination='" + _pvt->names.back() + "'";
+    auto match = "destination='" + _pvt->names.back() + "'";
     add_match(match.c_str());
   }
 }
@@ -427,23 +403,19 @@ void Connection::request_name(const char *name, int flags)
 unsigned long Connection::sender_unix_uid(const char *sender)
 {
   InternalError e;
-
-  unsigned long ul = dbus_bus_get_unix_user(_pvt->conn, sender, e);
-
-  if (e) throw Error(e);
-
-  return ul;
+  auto uid = dbus_bus_get_unix_user(_pvt->conn, sender, e);
+  if (e)
+    throw Error(e);
+  return uid;
 }
 
 bool Connection::has_name(const char *name)
 {
   InternalError e;
-
-  bool b = dbus_bus_name_has_owner(_pvt->conn, name, e);
-
-  if (e) throw Error(e);
-
-  return b;
+  auto has_owner = dbus_bus_name_has_owner(_pvt->conn, name, e);
+  if (e)
+    throw Error(e);
+  return has_owner;
 }
 
 const std::vector<std::string>& Connection::names()
@@ -454,10 +426,11 @@ const std::vector<std::string>& Connection::names()
 bool Connection::start_service(const char *name, unsigned long flags)
 {
   InternalError e;
+  const bool b = dbus_bus_start_service_by_name(
+    _pvt->conn, name, flags, nullptr, e);
 
-  bool b = dbus_bus_start_service_by_name(_pvt->conn, name, flags, NULL, e);
-
-  if (e) throw Error(e);
+  if (e)
+    throw Error(e);
 
   return b;
 }
@@ -467,7 +440,7 @@ void Connection::set_timeout(int timeout)
   _timeout = timeout;
 }
 
-int Connection::get_timeout()
+int Connection::get_timeout() const
 {
   return _timeout;
 }

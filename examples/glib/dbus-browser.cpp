@@ -75,9 +75,8 @@ void DBusBrowser::_inspect_append(Gtk::TreeModel::Row *row, const std::string &b
 
   ::DBus::Xml::Nodes ifaces = root["interface"];
 
-  for (::DBus::Xml::Nodes::iterator ii = ifaces.begin(); ii != ifaces.end(); ++ii)
-  {
-    ::DBus::Xml::Node &iface = **ii;
+  for (const auto& ii : ifaces) {
+    const auto &iface = *ii;
 
     Gtk::TreeModel::Row i_row = row
                                 ? *(_tm_inspect->append(row->children()))

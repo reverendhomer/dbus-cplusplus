@@ -33,13 +33,4 @@ std::string stub_name(std::string name);
 std::string signature_to_type(const std::string &signature);
 void underscorize(std::string &str);
 
-/// create std::string from any number
-template <typename T>
-std::string toString(const T &thing, int w = 0, int p = 0)
-{
-  std::ostringstream os;
-  os << std::setw(w) << std::setprecision(p) << thing;
-  return os.str();
-}
-
 #endif//__DBUSXX_TOOLS_GENERATOR_UTILS_H

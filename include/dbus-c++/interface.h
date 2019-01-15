@@ -45,7 +45,7 @@ struct DXXAPI PropertyData
   Variant		value;
 };
 
-typedef std::map<std::string, PropertyData>	PropertyTable;
+using PropertyTable = std::map<std::string, PropertyData>;
 
 class IntrospectedInterface;
 
@@ -53,7 +53,7 @@ class ObjectAdaptor;
 class InterfaceAdaptor;
 class SignalMessage;
 
-typedef std::map<std::string, InterfaceAdaptor *> InterfaceAdaptorTable;
+using InterfaceAdaptorTable = std::map<std::string, InterfaceAdaptor *>;
 
 class DXXAPI AdaptorBase
 {
@@ -80,7 +80,7 @@ class ObjectProxy;
 class InterfaceProxy;
 class CallMessage;
 
-typedef std::map<std::string, InterfaceProxy *> InterfaceProxyTable;
+using InterfaceProxyTable = std::map<std::string, InterfaceProxy *>;
 
 class DXXAPI ProxyBase
 {
@@ -92,8 +92,7 @@ protected:
 
   InterfaceProxy *find_interface(const std::string &name);
 
-  virtual ~ProxyBase()
-  {}
+  virtual ~ProxyBase() = default;
 
   virtual Message _invoke_method(CallMessage &) = 0;
 
@@ -104,31 +103,24 @@ protected:
 
 class DXXAPI Interface
 {
+private:
+  std::string _name;
+
 public:
 
   Interface(const std::string &name);
+  virtual ~Interface() = default;
 
-  virtual ~Interface();
-
-  inline const std::string &name() const;
-
-private:
-
-  std::string 	_name;
+  inline const std::string &name() const noexcept
+  {
+    return _name;
+  }
 };
 
 /*
 */
 
-const std::string &Interface::name() const
-{
-  return _name;
-}
-
-/*
-*/
-
-typedef std::map< std::string, Slot<Message, const CallMessage &> > MethodTable;
+using MethodTable = std::map<std::string, Slot<Message, const CallMessage &>>;
 
 class DXXAPI InterfaceAdaptor : public Interface, public virtual AdaptorBase
 {
@@ -146,7 +138,7 @@ public:
 
   virtual IntrospectedInterface *introspect() const
   {
-    return NULL;
+    return nullptr;
   }
 
 protected:
@@ -158,7 +150,7 @@ protected:
 /*
 */
 
-typedef std::map< std::string, Slot<void, const SignalMessage &> > SignalTable;
+using SignalTable = std::map<std::string, Slot<void, const SignalMessage &>>;
 
 class DXXAPI InterfaceProxy : public Interface, public virtual ProxyBase
 {

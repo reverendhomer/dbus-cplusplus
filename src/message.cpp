@@ -388,8 +388,7 @@ Message::~Message()
 
 Message &Message::operator = (const Message &m)
 {
-  if (&m != this)
-  {
+  if (&m != this) {
     dbus_message_unref(_pvt->msg);
     _pvt = m._pvt;
     dbus_message_ref(_pvt->msg);
@@ -632,7 +631,7 @@ const char *CallMessage::signature() const
 
 ReturnMessage::ReturnMessage(const CallMessage &callee)
 {
-  _pvt = new Private(dbus_message_new_method_return(callee._pvt->msg));
+  _pvt = std::make_shared<Private>(dbus_message_new_method_return(callee._pvt->msg));
 }
 
 const char *ReturnMessage::signature() const

@@ -64,13 +64,14 @@ class DXXAPI BusDispatcher : public Dispatcher, public DefaultMainLoop
 public:
   BusDispatcher();
 
-  ~BusDispatcher() {}
+  virtual ~BusDispatcher() = default;
 
   virtual void enter();
 
   virtual void leave();
 
-  virtual Pipe *add_pipe(void(*handler)(const void *data, void *buffer, unsigned int nbyte), const void *data);
+  using handler_t = void(*)(const void *data, void *buffer, unsigned int nbyte);
+  virtual Pipe *add_pipe(handler_t handler, const void *data);
 
   virtual void del_pipe(Pipe *pipe);
 
@@ -91,7 +92,7 @@ public:
 private:
   bool _running;
   int _pipe[2];
-  std::list <Pipe *> pipe_list;
+  std::list<Pipe *> pipe_list;
 };
 
 } /* namespace DBus */

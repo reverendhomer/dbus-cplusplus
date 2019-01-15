@@ -30,7 +30,6 @@
 #endif
 
 #include <dbus-c++/message.h>
-#include <dbus-c++/refptr_impl.h>
 
 #include <dbus/dbus.h>
 

@@ -42,8 +42,8 @@ Error::Error()
   : _int(new InternalError)
 {}
 
-Error::Error(InternalError &i)
-  : _int(new InternalError(i))
+Error::Error(InternalError& i)
+  : _int(new InternalError(std::move(i)))
 {}
 
 Error::Error(const char *name, const char *message)
@@ -56,10 +56,6 @@ Error::Error(Message &m)
   : _int(new InternalError)
 {
   dbus_set_error_from_message(&(_int->error), m._pvt->msg);
-}
-
-Error::~Error() throw()
-{
 }
 
 const char *Error::name() const
@@ -82,7 +78,7 @@ void Error::set(const char *name, const char *message)
   dbus_set_error_const(&(_int->error), name, message);
 }
 
-const char *Error::what() const throw()
+const char *Error::what() const noexcept
 {
   return _int->error.message;
 }

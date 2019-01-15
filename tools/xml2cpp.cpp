@@ -21,98 +21,103 @@
  *
  */
 
-#include <cstdlib>
-#include <cstring>
+#include <getopt.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string>
-#include <map>
-#include <iostream>
 #include <fstream>
-#include <sstream>
 
 #include "xml2cpp.h"
 #include "generate_adaptor.h"
 #include "generate_proxy.h"
 
-using namespace std;
 using namespace DBus;
 
-//typedef map<string,string> TypeCache;
+const char *xml_file = nullptr;
+const char *proxy_file = nullptr;
+const char *adaptor_file = nullptr;
 
-void usage(const char *argv0)
+int usage(const char *prog_name)
 {
-  cerr << endl << "Usage: " << argv0
-       << " <xmlfile> [ --proxy=<outfile.h> ] [ --adaptor=<outfile.h> ]"
-       << endl << endl;
-  exit(-1);
+  fprintf(stderr, "%s XML_FILE [OPTIONS...]\n\n"
+                  "dbus-c++ XML to .cpp converter\n\n"
+                  "  --proxy FILE    Generate proxy file\n"
+                  "  --adaptor FILE  Generate adaptor file\n"
+                  "  -h --help       Print help and exit\n"
+                  "  -V --version    Print version and exit\n"
+                , prog_name);
+  return 0;
 }
 
-/*int char_to_atomic_type(char t)
+int version(const char *prog_name)
 {
-	if (strchr("ybnqiuxtdsgavre", t))
-		return t;
+  printf("%s 0.1\n", prog_name);
+  return 0;
+}
 
-	return DBUS_TYPE_INVALID;
-}*/
-
-
-
-/*bool is_atomic_type(const string &type)
+int parse_argv(int argc, char *argv[])
 {
-	return type.length() == 1 && char_to_atomic_type(type[0]) != DBUS_TYPE_INVALID;
-}*/
-
-
-int main(int argc, char **argv)
-{
-  if (argc < 2)
-    usage(argv[0]);
-
-  bool proxy_mode = false;
-  char *proxy = nullptr;
-
-  bool adaptor_mode = false;
-  char *adaptor = nullptr;
-
-  for (int a = 1; a < argc; ++a) {
-    if (!strncmp(argv[a], "--proxy=", 8)) {
-      proxy_mode = true;
-      proxy = argv[a] + 8;
-    }
-    else if (!strncmp(argv[a], "--adaptor=", 10)) {
-      adaptor_mode = true;
-      adaptor = argv[a] + 10;
+  enum optid { PROXY=0x100, ADAPTOR };
+  const struct option options[] = {
+    {"proxy",   required_argument, nullptr, PROXY},
+    {"adaptor", required_argument, nullptr, ADAPTOR},
+    {"help",    no_argument,       nullptr, 'h'},
+    {"version", no_argument,       nullptr, 'V'},
+    {}
+  };
+  int c;
+  while ((c = getopt_long(argc, argv, "hV", options, nullptr)) >= 0) {
+    switch (c) {
+      case 'h':
+        return usage(argv[0]);
+      case 'V':
+        return version(argv[0]);
+      case PROXY:
+        proxy_file = optarg;
+        break;
+      case ADAPTOR:
+        adaptor_file = optarg;
+        break;
+      default:
+        return -1;
     }
   }
+  return 1;
+}
 
-  if (!proxy_mode && !adaptor_mode)
-    usage(argv[0]);
-
-  ifstream xmlfile(argv[1]);
-
+int main(int argc, char *argv[])
+{
+  if (argc < 2) {
+    fprintf(stderr, "no file specified (see --help)\n");
+    return 1;
+  }
+  int r = parse_argv(argc, argv);
+  if (r <= 0)
+    return r < 0 ? 1 : 0;
+  xml_file = argv[optind];
+  std::ifstream xmlfile(xml_file);
   if (xmlfile.bad()) {
-    cerr << "unable to open file " << argv[1] << endl;
-    return -1;
+    fprintf(stderr, "unable to open file %s\n", xml_file);
+    return 1;
   }
 
   Xml::Document doc;
-
   try {
     xmlfile >> doc;
-    //cout << doc.to_xml();
   } catch (Xml::Error &e) {
-    cerr << "error parsing " << argv[1] << ": " << e.what() << endl;
+    fprintf(stderr, "error parsing %s: %s\n", xml_file, e.what());
     return -1;
   }
 
   if (!doc.root) {
-    cerr << "empty document" << endl;
+    fputs("empty document", stderr);
     return -1;
   }
 
-  if (proxy_mode)
-    generate_proxy(doc, proxy);
-  if (adaptor_mode)
-    generate_adaptor(doc, adaptor);
+  if (proxy_file != nullptr)
+    generate_proxy(doc, proxy_file);
+  if (adaptor_file != nullptr)
+    generate_adaptor(doc, adaptor_file);
 
   return 0;
 }

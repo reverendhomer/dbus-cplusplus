@@ -34,7 +34,7 @@ static char *service;
 
 void niam(int sig)
 {
-  DBus::Connection conn = systembus ? DBus::Connection::SystemBus() : DBus::Connection::SessionBus();
+  auto conn = systembus ? DBus::Connection::SystemBus() : DBus::Connection::SessionBus();
 
   IntrospectedObject io(conn, path, service);
 
@@ -49,31 +49,27 @@ try {
   signal(SIGINT, niam);
   signal(SIGALRM, niam);
 
-  if (argc == 1)
-  {
-    std::cerr << std::endl << "Usage: " << argv[0] << " [--system] <object_path> [<destination>]" << std::endl << std::endl;
+  if (argc == 1) {
+    std::cerr << "\nUsage: " << argv[0] << " [--system] <object_path> [<destination>]\n\n";
+    return 1;
   }
-  else
-  {
-    if (strcmp(argv[1], "--system"))
-    {
-      systembus = false;
-      path = argv[1];
-      service = argc > 2 ? argv[2] : 0;
-    }
-    else
-    {
-      systembus = true;
-      path = argv[2];
-      service = argc > 3 ? argv[3] : 0;
-    }
 
-    DBus::default_dispatcher = &dispatcher;
-
-    alarm(1);
-
-    dispatcher.enter();
+  if (strcmp(argv[1], "--system")) {
+    systembus = false;
+    path = argv[1];
+    service = argc > 2 ? argv[2] : 0;
   }
+  else {
+    systembus = true;
+    path = argv[2];
+    service = argc > 3 ? argv[3] : 0;
+  }
+
+  DBus::default_dispatcher = &dispatcher;
+
+  alarm(1);
+
+  dispatcher.enter();
 
   return 0;
 } catch (const DBus::Error& err) {

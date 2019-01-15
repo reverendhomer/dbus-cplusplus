@@ -25,8 +25,9 @@
 #ifndef __DBUSXX_PENDING_CALL_H
 #define __DBUSXX_PENDING_CALL_H
 
+#include <memory>
+
 #include "api.h"
-#include "util.h"
 #include "message.h"
 
 namespace DBus
@@ -122,7 +123,7 @@ public:
 
 private:
 
-  RefPtrI<Private> _pvt;
+  std::shared_ptr<Private> _pvt;
 
   friend struct Private;
   friend class Connection;

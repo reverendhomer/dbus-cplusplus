@@ -41,7 +41,6 @@
 #include <unistd.h>
 
 using namespace DBus;
-using namespace std;
 
 BusTimeout::BusTimeout(Timeout::Internal *ti, BusDispatcher *bd)
   : Timeout(ti), DefaultTimeout(Timeout::interval(), true, bd)
@@ -82,8 +81,8 @@ BusDispatcher::BusDispatcher() :
 {
   // pipe to create a new fd used to unlock a dispatcher at any
   // moment (used by leave function)
-  int ret = pipe(_pipe);
-  if (ret == -1) throw Error("PipeError:errno", toString(errno).c_str());
+  if (pipe(_pipe) == -1)
+    throw Error("PipeError:errno", std::to_string(errno).c_str());
 
   _fdunlock[0] = _pipe[0];
   _fdunlock[1] = _pipe[1];
@@ -95,22 +94,15 @@ void BusDispatcher::enter()
 
   _running = true;
 
-  while (_running)
-  {
+  while (_running) {
     do_iteration();
 
-    for (std::list <Pipe *>::iterator p_it = pipe_list.begin();
-         p_it != pipe_list.end();
-         ++p_it)
-    {
-      Pipe *read_pipe = *p_it;
+    for (auto& read_pipe : pipe_list) {
       char buffer[1024]; // TODO: should be max pipe size
       unsigned int nbytes = 0;
 
       while (read_pipe->read(buffer, nbytes) > 0)
-      {
         read_pipe->_handler(read_pipe->_data, buffer, nbytes);
-      }
 
     }
   }
@@ -122,14 +114,15 @@ void BusDispatcher::leave()
 {
   _running = false;
 
-  int ret = write(_fdunlock[1], "exit", strlen("exit"));
-  if (ret == -1) throw Error("WriteError:errno", toString(errno).c_str());
+  int ret = write(_fdunlock[1], "exit", sizeof("exit"));
+  if (ret == -1)
+    throw Error("WriteError:errno", std::to_string(errno).c_str());
 
   close(_fdunlock[1]);
   close(_fdunlock[0]);
 }
 
-Pipe *BusDispatcher::add_pipe(void(*handler)(const void *data, void *buffer, unsigned int nbyte), const void *data)
+Pipe *BusDispatcher::add_pipe(handler_t handler, const void *data)
 {
   Pipe *new_pipe = new Pipe(handler, data);
   pipe_list.push_back(new_pipe);

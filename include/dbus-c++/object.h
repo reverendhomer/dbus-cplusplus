@@ -27,6 +27,7 @@
 
 #include <string>
 #include <list>
+#include <memory>
 
 #include "api.h"
 #include "interface.h"
@@ -39,60 +40,48 @@ namespace DBus
 
 class DXXAPI Object
 {
+private:
+  Connection	_conn;
+  DBus::Path	_path;
+  std::string	_service;
+  int		_default_timeout;
+
 protected:
 
   Object(Connection &conn, const Path &path, const char *service);
 
 public:
 
-  virtual ~Object();
+  virtual ~Object() = default;
 
-  inline const DBus::Path &path() const;
+  inline const DBus::Path &path() const noexcept
+  {
+    return _path;
+  }
 
-  inline const std::string &service() const;
+  inline const std::string &service() const noexcept
+  {
+    return _service;
+  }
 
-  inline Connection &conn();
+  inline Connection &conn() noexcept
+  {
+    return _conn;
+  }
 
   void set_timeout(int new_timeout = -1);
 
-  inline int get_timeout() const;
+  inline int get_timeout() const noexcept
+  {
+    return _default_timeout;
+  }
 
 private:
 
   DXXAPILOCAL virtual bool handle_message(const Message &) = 0;
   DXXAPILOCAL virtual void register_obj() = 0;
   DXXAPILOCAL virtual void unregister_obj(bool throw_on_error = true) = 0;
-
-private:
-
-  Connection	_conn;
-  DBus::Path	_path;
-  std::string	_service;
-  int		_default_timeout;
 };
-
-/*
-*/
-
-Connection &Object::conn()
-{
-  return _conn;
-}
-
-const DBus::Path &Object::path() const
-{
-  return _path;
-}
-
-const std::string &Object::service() const
-{
-  return _service;
-}
-
-int Object::get_timeout() const
-{
-  return _default_timeout;
-}
 
 /*
 */
@@ -100,9 +89,7 @@ int Object::get_timeout() const
 class DXXAPI Tag
 {
 public:
-
-  virtual ~Tag()
-  {}
+  virtual ~Tag() = default;
 };
 
 /*
@@ -110,8 +97,8 @@ public:
 
 class ObjectAdaptor;
 
-typedef std::list<ObjectAdaptor *> ObjectAdaptorPList;
-typedef std::list<std::string> ObjectPathList;
+using ObjectAdaptorPList = std::list<ObjectAdaptor *>;
+using ObjectPathList = std::list<std::string>;
 
 class DXXAPI ObjectAdaptor : public Object, public virtual AdaptorBase
 {
@@ -129,22 +116,16 @@ public:
 
   ~ObjectAdaptor();
 
-  inline const ObjectAdaptor *object() const;
+  inline const ObjectAdaptor *object() const noexcept
+  {
+    return this;
+  }
 
 protected:
 
   class DXXAPI Continuation
   {
-  public:
-
-    inline MessageIter &writer();
-
-    inline Tag *tag();
-
   private:
-
-    Continuation(Connection &conn, const CallMessage &call, const Tag *tag);
-
     Connection _conn;
     CallMessage _call;
     MessageIter _writer;
@@ -152,6 +133,18 @@ protected:
     const Tag *_tag;
 
     friend class ObjectAdaptor;
+
+    Continuation(Connection &conn, const CallMessage &call, const Tag *tag);
+
+  public:
+    inline MessageIter &writer() noexcept
+    {
+      return _writer;
+    }
+    inline Tag *tag() noexcept
+    {
+      return const_cast<Tag *>(_tag);
+    }
   };
 
   void return_later(const Tag *tag);
@@ -171,33 +164,17 @@ private:
   void register_obj();
   void unregister_obj(bool throw_on_error = true);
 
-  typedef std::map<const Tag *, Continuation *> ContinuationMap;
-  ContinuationMap _continuations;
+  std::map<const Tag *, std::unique_ptr<Continuation>> _continuations;
 
   friend struct Private;
 };
-
-const ObjectAdaptor *ObjectAdaptor::object() const
-{
-  return this;
-}
-
-Tag *ObjectAdaptor::Continuation::tag()
-{
-  return const_cast<Tag *>(_tag);
-}
-
-MessageIter &ObjectAdaptor::Continuation::writer()
-{
-  return _writer;
-}
 
 /*
 */
 
 class ObjectProxy;
 
-typedef std::list<ObjectProxy *> ObjectProxyPList;
+using ObjectProxyPList = std::list<ObjectProxy *>;
 
 class DXXAPI ObjectProxy : public Object, public virtual ProxyBase
 {
@@ -207,7 +184,10 @@ public:
 
   ~ObjectProxy();
 
-  inline const ObjectProxy *object() const;
+  inline const ObjectProxy *object() const noexcept
+  {
+    return this;
+  }
 
 private:
 
@@ -224,11 +204,6 @@ private:
 
   MessageSlot _filtered;
 };
-
-const ObjectProxy *ObjectProxy::object() const
-{
-  return this;
-}
 
 } /* namespace DBus */
 

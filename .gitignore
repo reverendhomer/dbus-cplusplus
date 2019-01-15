@@ -22,3 +22,4 @@ missing
 src/Makefile.in
 tools/Makefile.in
 build
+*.swp

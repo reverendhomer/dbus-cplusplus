@@ -33,6 +33,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 #include <iostream>
 #include <sstream>
 
@@ -48,10 +49,7 @@ public:
 
   Error(const char *error, int line, int column);
 
-  ~Error() throw()
-  {}
-
-  const char *what() const throw()
+  const char *what() const noexcept
   {
     return _error.c_str();
   }
@@ -63,36 +61,34 @@ private:
 
 class Node;
 
-class Nodes : public std::vector<Node *>
+class Nodes : public std::vector<const Node *>
 {
 public:
 
-  Nodes operator[](const std::string &key);
+  Nodes operator[](const std::string &key) const;
 
-  Nodes select(const std::string &attr, const std::string &value);
+  Nodes select(const std::string &attr, const std::string &value) const;
 };
 
 class Node
 {
 public:
-
-  typedef std::map<std::string, std::string> Attributes;
-
-  typedef std::vector<Node> Children;
+  using Attributes = std::map<std::string, std::string>;
+  using Children = std::vector<Node>;
 
   std::string name;
   std::string cdata;
   Children children;
 
-  Node(std::string &n, Attributes &a)
+  Node(const std::string &n, Attributes &a)
     : name(n), _attrs(a)
   {}
 
   Node(const char *n, const char **a = NULL);
 
-  Nodes operator[](const std::string &key);
+  Nodes operator[](const std::string &key) const;
 
-  std::string get(const std::string &attribute);
+  std::string get(const std::string &attribute) const noexcept;
 
   void set(const std::string &attribute, std::string value);
 
@@ -116,14 +112,11 @@ class Document
 public:
 
   struct Expat;
-
-  Node *root;
+  std::unique_ptr<Node> root;
 
   Document();
 
-  Document(const std::string &xml);
-
-  ~Document();
+  explicit Document(const std::string &xml);
 
   void from_xml(const std::string &xml);
 

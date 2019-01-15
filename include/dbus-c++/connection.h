@@ -26,10 +26,10 @@
 #define __DBUSXX_CONNECTION_H
 
 #include <list>
+#include <memory>
 
 #include "api.h"
 #include "types.h"
-#include "util.h"
 #include "message.h"
 #include "pendingcall.h"
 
@@ -38,9 +38,8 @@ namespace DBus
 
 class Connection;
 
-typedef Slot<bool, const Message &> MessageSlot;
-
-typedef std::list<Connection>	ConnectionList;
+using MessageSlot = Slot<bool, const Message &>;
+using ConnectionList = std::list<Connection>;
 
 class ObjectAdaptor;
 class Dispatcher;
@@ -57,7 +56,7 @@ public:
 
   struct Private;
 
-  typedef std::list<Private *> PrivatePList;
+  using PrivatePList = std::list<Private *>;
 
   Connection(Private *);
 
@@ -450,7 +449,7 @@ public:
 
   void set_timeout(int timeout);
 
-  int get_timeout();
+  int get_timeout() const;
 
 private:
 
@@ -458,7 +457,7 @@ private:
 
 private:
 
-  RefPtrI<Private> _pvt;
+  std::shared_ptr<Private> _pvt;
   int _timeout;
 
   friend class ObjectAdaptor; // needed in order to register object paths for a connection

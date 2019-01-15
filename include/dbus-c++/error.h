@@ -26,9 +26,9 @@
 #define __DBUSXX_ERROR_H
 
 #include "api.h"
-#include "util.h"
 
 #include <exception>
+#include <memory>
 
 namespace DBus
 {
@@ -42,15 +42,15 @@ public:
 
   Error();
 
-  Error(InternalError &);
+  Error(InternalError&);
 
   Error(const char *name, const char *message);
 
   Error(Message &);
 
-  ~Error() throw();
+  virtual ~Error() = default;
 
-  const char *what() const throw();
+  const char *what() const noexcept;
 
   const char *name() const;
 
@@ -61,14 +61,14 @@ public:
 
   bool is_set() const;
 
-  operator bool() const
+  inline operator bool() const
   {
     return is_set();
   }
 
 private:
 
-  RefPtrI<InternalError> _int;
+  std::shared_ptr<InternalError> _int;
 };
 
 struct DXXAPI ErrorFailed : public Error

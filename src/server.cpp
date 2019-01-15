@@ -66,7 +66,7 @@ Server::Server(const char *address)
 
   debug_log("server 0x%08x listening on %s", server, address);
 
-  _pvt = new Private(server);
+  _pvt = std::make_shared<Private>(server);
 
   dbus_server_set_new_connection_function(_pvt->server, Private::on_new_conn_cb, this, NULL);
 

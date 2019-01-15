@@ -32,7 +32,6 @@
 #include <dbus-c++/connection.h>
 #include <dbus-c++/server.h>
 #include <dbus-c++/dispatcher.h>
-#include <dbus-c++/refptr_impl.h>
 
 #include <dbus/dbus.h>
 
