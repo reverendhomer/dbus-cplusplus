@@ -29,7 +29,6 @@
 #include "generator_utils.h"
 #include "generate_proxy.h"
 
-using namespace std;
 using namespace DBus;
 
 extern const char *tab;
@@ -40,15 +39,15 @@ extern const char *dbus_includes;
   */
 void generate_proxy(const Xml::Document &doc, const char *filename)
 {
-  ostringstream body;
-  ostringstream head;
-  vector <string> include_vector;
+  std::ostringstream body;
+  std::ostringstream head;
+  std::vector<std::string> include_vector;
 
   head << header;
-  string filestring = filename;
+  std::string filestring = filename;
   underscorize(filestring);
 
-  string cond_comp = "__dbusxx__" + filestring + "__PROXY_MARSHAL_H\n";
+  const auto cond_comp = "__dbusxx__" + filestring + "__PROXY_MARSHAL_H\n";
 
   head << "#ifndef " << cond_comp
        << "#define " << cond_comp
@@ -56,9 +55,9 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
 
   // iterate over all interface definitions
   for (const auto& i : (*doc.root)["interface"]) {
-    auto& iface = *i;
-    auto methods = iface["method"];
-    auto signals = iface["signal"];
+    const auto& iface = *i;
+    const auto methods = iface["method"];
+    const auto signals = iface["signal"];
     Xml::Nodes ms;
     ms.insert(ms.end(), methods.begin(), methods.end());
     ms.insert(ms.end(), signals.begin(), signals.end());
@@ -67,29 +66,29 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
     auto ifacename = iface.get("name");
     if (ifacename == "org.freedesktop.DBus.Introspectable"
         || ifacename == "org.freedesktop.DBus.Properties") {
-      cerr << "skipping interface " << ifacename << endl;
+      std::cerr << "skipping interface " << ifacename << '\n';
       continue;
     }
 
-    istringstream ss(ifacename);
-    string nspace;
+    std::istringstream ss(ifacename);
+    std::string nspace;
     unsigned int nspaces = 0;
 
     // prints all the namespaces defined with <interface name="X.Y.Z">
-    while (ss.str().find('.', ss.tellg()) != string::npos) {
-      getline(ss, nspace, '.');
+    while (ss.str().find('.', ss.tellg()) != std::string::npos) {
+      std::getline(ss, nspace, '.');
       body << "namespace " << nspace << " {\n";
       ++nspaces;
     }
-    body << endl;
+    body << '\n';
 
-    string ifaceclass;
-    getline(ss, ifaceclass);
+    std::string ifaceclass;
+    std::getline(ss, ifaceclass);
 
     // a "_proxy" is added to class name to distinguish between proxy and adaptor
     ifaceclass += "_proxy";
 
-    cerr << "generating code for interface " << ifacename << "...\n";
+    std::cerr << "generating code for interface " << ifacename << "...\n";
 
     // the code from class definiton up to opening of the constructor is generated...
     body << "class " << ifaceclass << '\n'
@@ -102,10 +101,7 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
 
     // generates code to connect all the signal stubs; this is still inside the constructor
     for (const auto& si : signals) {
-      auto& signal = *si;
-
-      // string marshname = "_" + signal.get("name") + "_stub";
-
+      const auto& signal = *si;
       body << tab << tab << "connect_signal("
            << ifaceclass << ", " << signal.get("name") << ", "
            << stub_name(signal.get("name")) << ");\n";
@@ -119,9 +115,9 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
 
     // this loop generates all properties
     for (const auto& pi : iface["property"]) {
-      auto& property = *pi;
-      auto prop_name = property.get("name");
-      auto property_access = property.get("access");
+      const auto& property = *pi;
+      const auto prop_name = property.get("name");
+      const auto property_access = property.get("access");
       if (property_access == "read" || property_access == "readwrite") {
         body << tab << tab
              << "const "<< signature_to_type(property.get("type"))
@@ -186,24 +182,24 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
 
     // this loop generates all methods
     for (const auto& mi : methods) {
-      auto& method = *mi;
-      string arg_object;
+      const auto& method = *mi;
+      std::string arg_object;
 
       // parse method level noreply annotations
-      auto annotations_noreply = method["annotation"].select(
+      const auto annotations_noreply = method["annotation"].select(
           "name", "org.freedesktop.DBus.Method.NoReply");
       bool annotation_noreply_value = false;
       if (!annotations_noreply.empty()
           && annotations_noreply.front()->get("value") == "true")
         annotation_noreply_value = true;
 
-      auto args = method["arg"];
-      auto annotations_object = args["annotation"].select(
+      const auto args = method["arg"];
+      const auto annotations_object = args["annotation"].select(
           "name", "org.freedesktop.DBus.Object");
       if (!annotations_object.empty())
         arg_object = annotations_object.front()->get("value");
 
-      auto args_out = args.select("direction", "out");
+      const auto args_out = args.select("direction", "out");
       if (args_out.size() == 0 || args_out.size() > 1)
         body << tab << "void ";
       else if (args_out.size() == 1)
@@ -216,13 +212,13 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
       body << method.get("name") << "(";
 
       // generate all 'in' arguments for a method signature
-      auto args_in = args.select("direction", "in");
+      const auto args_in = args.select("direction", "in");
       unsigned int i = 0;
       for (auto ai = args_in.begin(); ai != args_in.end(); ++ai, ++i) {
-        auto& arg = **ai;
-        string arg_object;
+        const auto& arg = **ai;
+        std::string arg_object;
 
-        auto annotations_object = arg["annotation"].select(
+        const auto annotations_object = arg["annotation"].select(
             "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
           arg_object = annotations_object.front()->get("value");
@@ -238,7 +234,7 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
           include_vector.push_back(arg_object);
         }
 
-        auto arg_name = arg.get("name");
+        const auto arg_name = arg.get("name");
         if (!arg_name.empty())
           body << arg_name;
         else
@@ -252,10 +248,10 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
         // generate all 'out' arguments for a method signature
         unsigned int j = 0;
         for (auto ao = args_out.begin(); ao != args_out.end(); ++ao, ++j) {
-          auto& arg = **ao;
-          string arg_object;
+          const auto& arg = **ao;
+          std::string arg_object;
 
-          auto annotations_object = arg["annotation"].select(
+          const auto annotations_object = arg["annotation"].select(
               "name", "org.freedesktop.DBus.Object");
           if (!annotations_object.empty())
             arg_object = annotations_object.front()->get("value");
@@ -271,7 +267,7 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
             include_vector.push_back(arg_object);
           }
 
-          auto arg_name = arg.get("name");
+          const auto arg_name = arg.get("name");
           if (!arg_name.empty())
             body << " " << arg_name;
           else
@@ -291,24 +287,24 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
       // generate all 'in' arguments for a method body
       i = 0;
       for (auto ai = args_in.begin(); ai != args_in.end(); ++ai, ++i) {
-        auto& arg = **ai;
-        string arg_object;
+        const auto& arg = **ai;
+        std::string arg_object;
 
-        auto annotations_object = arg["annotation"].select(
+        const auto annotations_object = arg["annotation"].select(
             "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
           arg_object = annotations_object.front()->get("value");
 
         auto arg_name = arg.get("name");
         if (arg_name.empty())
-          arg_name = "argin" + to_string(i);
+          arg_name = "argin" + std::to_string(i);
 
         // generate extra code to wrap object
         if (!arg_object.empty()) {
           body << tab << tab
                << signature_to_type(arg.get("type")) << "_" << arg_name << ";\n"
                << tab << tab << "_" << arg_name << " << " << arg_name << ";\n";
-          arg_name = string("_") + arg_name;
+          arg_name = std::string("_") + arg_name;
         }
 
         body << tab << tab << "wi << " << arg_name << ";\n";
@@ -319,10 +315,10 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
       // generate noreply/reply method calls
       if (annotation_noreply_value) {
         if (!args_out.empty()) {
-          cerr << "Function: " << method.get("name") << ":\n"
-               << "Option 'org.freedesktop.DBus.Method.NoReply' not allowed"
-               << " for methods with 'out' variables!\n"
-               << "-> Option ignored!\n";
+          std::cerr << "Function: " << method.get("name") << ":\n"
+                    << "Option 'org.freedesktop.DBus.Method.NoReply' not allowed"
+                    << " for methods with 'out' variables!\n"
+                    << "-> Option ignored!\n";
 
           body << tab << tab << "::DBus::Message ret = invoke_method (call);\n";
         }
@@ -338,9 +334,9 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
 
       // generate 'out' values as return if only one existing
       if (args_out.size() == 1) {
-        string arg_object;
+        std::string arg_object;
 
-        auto annotations_object = args_out["annotation"].select(
+        const auto annotations_object = args_out["annotation"].select(
             "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
           arg_object = annotations_object.front()->get("value");
@@ -362,17 +358,17 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
         // generate multible 'out' value
         unsigned int i = 0;
         for (auto ao = args_out.begin(); ao != args_out.end(); ++ao, ++i) {
-          auto& arg = **ao;
-          string arg_object;
+          const auto& arg = **ao;
+          std::string arg_object;
 
-          auto annotations_object = arg["annotation"].select(
+          const auto annotations_object = arg["annotation"].select(
               "name", "org.freedesktop.DBus.Object");
           if (!annotations_object.empty())
             arg_object = annotations_object.front()->get("value");
 
           auto arg_name = arg.get("name");
           if (arg_name.empty())
-            arg_name = "argout" + to_string(i);
+            arg_name = "argout" + std::to_string(i);
 
           if (!arg_object.empty())
             body << tab << tab
@@ -398,18 +394,18 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
 
     // this loop generates all signals
     for (const auto& si : signals) {
-      auto& signal = *si;
-      auto args = signal["arg"];
+      const auto& signal = *si;
+      const auto args = signal["arg"];
 
       body << tab << "virtual void " << signal.get("name") << "(";
 
       // this loop generates all argument for a signal
       unsigned int i = 0;
       for (auto ai = args.begin(); ai != args.end(); ++ai, ++i) {
-        auto& arg = **ai;
-        string arg_object;
+        const auto& arg = **ai;
+        std::string arg_object;
 
-        auto annotations_object = arg["annotation"].select(
+        const auto annotations_object = arg["annotation"].select(
             "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
           arg_object = annotations_object.front()->get("value");
@@ -425,7 +421,7 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
           include_vector.push_back(arg_object);
         }
 
-        auto arg_name = arg.get("name");
+        const auto arg_name = arg.get("name");
         if (!arg_name.empty())
           body << arg_name;
         else
@@ -444,22 +440,22 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
 
     // generate all the unmarshalers
     for (const auto& si : signals) {
-      auto& signal = *si;
+      const auto& signal = *si;
 
       body << tab << "void " << stub_name(signal.get("name"))
            << "(const ::DBus::SignalMessage &sig)\n"
            << tab << "{\n";
 
-      auto args = signal["arg"];
+      const auto args = signal["arg"];
       if (!args.empty())
         body << tab << tab << "::DBus::MessageIter ri = sig.reader();\n\n";
 
       unsigned int i = 0;
       for (auto ai = args.begin(); ai != args.end(); ++ai, ++i) {
-        auto& arg = **ai;
-        string arg_object;
+        const auto& arg = **ai;
+        std::string arg_object;
 
-        auto annotations_object = arg["annotation"].select(
+        const auto annotations_object = arg["annotation"].select(
             "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
           arg_object = annotations_object.front()->get("value");
@@ -469,7 +465,7 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
         // use a default if no arg name given
         auto arg_name = arg.get("name");
         if (arg_name.empty())
-          arg_name = "arg" + to_string(i);
+          arg_name = "arg" + std::to_string(i);
 
         body << arg_name << ";\n"
              << tab << tab << "ri >> " << arg_name << ";\n";
@@ -489,17 +485,17 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
       // generate all arguments for the call to the virtual function
       unsigned int j = 0;
       for (auto ai = args.begin(); ai != args.end(); ++ai, ++j) {
-        auto& arg = **ai;
-        string arg_object;
+        const auto& arg = **ai;
+        std::string arg_object;
 
-        auto annotations_object = arg["annotation"].select(
+        const auto annotations_object = arg["annotation"].select(
             "name", "org.freedesktop.DBus.Object");
         if (!annotations_object.empty())
           arg_object = annotations_object.front()->get("value");
 
         auto arg_name = arg.get("name");
         if (arg_name.empty())
-          arg_name = "arg" + to_string(j);
+          arg_name = "arg" + std::to_string(j);
 
         if (!arg_object.empty())
           body << "_" << arg_name;
@@ -523,14 +519,14 @@ void generate_proxy(const Xml::Document &doc, const char *filename)
   body << "#endif //" << cond_comp;
 
   // remove all duplicates in the header include vector
-  auto vec_end_it = unique(include_vector.begin(), include_vector.end());
+  const auto vec_end_it = std::unique(include_vector.begin(), include_vector.end());
   for (auto inc_it = include_vector.begin(); inc_it != vec_end_it; ++inc_it)
     head << "#include " << "\"" << *inc_it << ".h" << "\"\n";
   head << '\n';
 
-  ofstream file(filename);
+  std::ofstream file(filename);
   if (file.bad()) {
-    cerr << "unable to write file " << filename << endl;
+    std::cerr << "unable to write file " << filename << '\n';
     exit(-1);
   }
 
