@@ -14,7 +14,6 @@ headers = files('''
     dbus-c++/pendingcall.h
     dbus-c++/pipe.h
     dbus-c++/property.h
-    dbus-c++/refptr_impl.h
     dbus-c++/server.h
     dbus-c++/types.h
     dbus-c++/util.h
